@@ -12,6 +12,13 @@ class GameExecutables(GameCalculations):
         self.win_data = Ways.get_ways_data(
             self.config, self.board, global_multiplier=self.global_multiplier
         )
+
+        # === DEBUG ===
+        marked_count = len(getattr(self, 'marked_winners_this_eval', []))
+        wins_count = len(self.win_data.get('wins', []))
+        print(f"[DEBUG] evaluate_ways_board → marked_winners_this_eval: {marked_count}, total wins: {wins_count}")
+        # === END DEBUG ===
+
         if self.win_data["totalWin"] > 0:
             Ways.record_ways_wins(self)
             self.win_manager.update_spinwin(self.win_data["totalWin"])
@@ -63,6 +70,11 @@ class GameExecutables(GameCalculations):
         but BEFORE tumble_game_board.
         Set .explode = False so the new Wild survives the current cascade.
         """
+        # === DEBUG ===
+        marked_count = len(getattr(self, 'marked_winners_this_eval', []))
+        print(f"[DEBUG] convert_marked_to_wild called → marked_winners_this_eval count: {marked_count}")
+        # === END DEBUG ===
+
         marked_winners = getattr(self, "marked_winners_this_eval", [])
         to_prune = set()
         for pos in marked_winners:
