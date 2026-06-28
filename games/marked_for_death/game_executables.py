@@ -13,6 +13,11 @@ class GameExecutables(GameCalculations):
             self.config, self.board, global_multiplier=self.global_multiplier
         )
 
+        # DEBUG
+        marked_count = len(getattr(self, 'marked_winners_this_eval', []))
+        wins_count = len(self.win_data.get('wins', []))
+        print(f"[DEBUG] evaluate_ways_board -> marked: {marked_count}, wins: {wins_count}")
+
         if self.win_data["totalWin"] > 0:
             Ways.record_ways_wins(self)
             self.win_manager.update_spinwin(self.win_data["totalWin"])
@@ -63,9 +68,10 @@ class GameExecutables(GameCalculations):
         """Convert marked in wins to Wild AFTER emit_tumble_win_events (paid)
         but BEFORE tumble_game_board.
         Set .explode = False so the new Wild survives the current cascade.
-        Self-contained: scans current win_data["wins"] for positions that have marked on board right now.
-        Does not depend on marked_winners_this_eval (reset by later evaluate_ways_board calls).
         """
+        # DEBUG
+        marked_count = len(getattr(self, 'marked_winners_this_eval', []))
+        print(f"[DEBUG] convert_marked_to_wild called -> marked count: {marked_count}")
 
         to_prune = set()
         for win in self.win_data.get("wins", []):
@@ -73,14 +79,14 @@ class GameExecutables(GameCalculations):
                 r, row = pos.get("reel"), pos.get("row")
                 if r is not None and row is not None and self.board[r][row].check_attribute("marked"):
                     to_prune.add((r, row))
-                    # bypass special func for W to avoid mult_values KeyError (not in dists yet)
+                    # bypass special func for W to avoid mult_values KeyError
                     old_funcs = self.special_symbol_functions
                     self.special_symbol_functions = {k: v for k, v in old_funcs.items() if k != "W"}
                     wild_sym = self.create_symbol("W")
                     self.special_symbol_functions = old_funcs
                     self.board[r][row] = wild_sym
                     self.board[r][row].explode = False
-        # Prune from win_data["wins"] so tumble_board_event excludes them from explodingSymbols.
+
         if to_prune:
             for w in self.win_data.get("wins", []):
                 w["positions"] = [
