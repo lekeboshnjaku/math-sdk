@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # This prevents the long retry loops on "wincap" (25000) or exact-0 that make
     # it look stuck after "All threads are online."
     # Remove this patch for real distribution runs.
-    for d in config.get_betmode("base").get_distributions():
+    for d in gamestate.get_betmode("base").get_distributions():
         if d.get_criteria() == "basegame":
             d._quota = 1.0
         else:
