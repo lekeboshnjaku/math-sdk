@@ -42,6 +42,7 @@ class GameState(GameStateOverride):
             self.check_repeat()
             attempt += 1
 
+        print(f"  Sim {sim} completed after {attempt} attempt(s)", flush=True)
         self.imprint_wins()
 
     def run_freespin(self) -> None:
