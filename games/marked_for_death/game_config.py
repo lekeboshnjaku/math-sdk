@@ -64,9 +64,13 @@ class GameConfig(Config):
         self.special_symbols = {"wild": ["W"], "scatter": ["S"], "multiplier": [], "marked": []}
 
         self.freespin_triggers = {
-            self.basegame_type: {3: 12, 4: 14, 5: 16},
-            self.freegame_type: {3: 12, 4: 14, 5: 16},
+            self.basegame_type: {},
+            self.freegame_type: {},
         }
+        for n in range(3, 21):
+            val = 12 + (n - 3) * 2
+            self.freespin_triggers[self.basegame_type][n] = val
+            self.freespin_triggers[self.freegame_type][n] = val
         self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
 
         # Load reels manually (more reliable) — must produce the same shape as read_reels_csv:
