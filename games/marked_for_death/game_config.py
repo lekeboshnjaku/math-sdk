@@ -97,6 +97,10 @@ class GameConfig(Config):
                             "scatter_triggers": {3: 100, 4: 20, 5: 5},
                             "force_wincap": True,
                             "force_freegame": True,
+                            "mult_values": {
+                                self.basegame_type: [1],
+                                self.freegame_type: [1],
+                            },
                         },
                     ),
                     Distribution(
@@ -110,6 +114,10 @@ class GameConfig(Config):
                             "scatter_triggers": {3: 100, 4: 20, 5: 5},
                             "force_wincap": False,
                             "force_freegame": True,
+                            "mult_values": {
+                                self.basegame_type: [1],
+                                self.freegame_type: [1],
+                            },
                         },
                     ),
                     Distribution(
@@ -120,6 +128,10 @@ class GameConfig(Config):
                             "reel_weights": {self.basegame_type: {"BR0": 1}},
                             "force_wincap": False,
                             "force_freegame": False,
+                            "mult_values": {
+                                self.basegame_type: [1],
+                                self.freegame_type: [1],
+                            },
                         },
                     ),
                     Distribution(
@@ -129,6 +141,10 @@ class GameConfig(Config):
                             "reel_weights": {self.basegame_type: {"BR0": 1}},
                             "force_wincap": False,
                             "force_freegame": False,
+                            "mult_values": {
+                                self.basegame_type: [1],
+                                self.freegame_type: [1],
+                            },
                         },
                     ),
                 ],

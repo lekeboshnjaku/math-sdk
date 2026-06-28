@@ -13,10 +13,8 @@ class GameStateOverride(GameExecutables):
         super().reset_book()
 
     def assign_special_sym_function(self):
-        self.special_symbol_functions = {
-            "M": [self.assign_mult_property],
-            "W": [self.assign_mult_property],
-        }
+        # No per-symbol multipliers for this game (global mult is used instead)
+        self.special_symbol_functions = {}
 
     def assign_mult_property(self, symbol):
         multiplier_value = get_random_outcome(
