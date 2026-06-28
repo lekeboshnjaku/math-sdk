@@ -64,19 +64,19 @@ class GameExecutables(GameCalculations):
         but BEFORE tumble_game_board.
         Set .explode = False so the new Wild survives the current cascade.
         """
+        marked_winners = getattr(self, "marked_winners_this_eval", [])
         to_prune = set()
-        for win in self.win_data.get("wins", []):
-            for pos in win.get("positions", []):
-                r, row = pos.get("reel"), pos.get("row")
-                if r is not None and row is not None and self.board[r][row].check_attribute("marked"):
-                    to_prune.add((r, row))
-                    # bypass special func for W to avoid mult_values KeyError
-                    old_funcs = self.special_symbol_functions
-                    self.special_symbol_functions = {k: v for k, v in old_funcs.items() if k != "W"}
-                    wild_sym = self.create_symbol("W")
-                    self.special_symbol_functions = old_funcs
-                    self.board[r][row] = wild_sym
-                    self.board[r][row].explode = False
+        for pos in marked_winners:
+            r, row = pos["reel"], pos["row"]
+            to_prune.add((r, row))
+            if self.board[r][row].check_attribute("marked"):
+                # bypass special func for W to avoid mult_values KeyError
+                old_funcs = self.special_symbol_functions
+                self.special_symbol_functions = {k: v for k, v in old_funcs.items() if k != "W"}
+                wild_sym = self.create_symbol("W")
+                self.special_symbol_functions = old_funcs
+                self.board[r][row] = wild_sym
+                self.board[r][row].explode = False
 
         if to_prune:
             for w in self.win_data.get("wins", []):
