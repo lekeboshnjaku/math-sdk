@@ -144,7 +144,7 @@ def analyze_books(books):
     fs_triggers = sum(
         1 for b in books
         for e in b.get("events", [])
-        if e.get("type") in ("FREESPINTRIGGER", "FREESPINRETRIGGER")
+        if e.get("type") in ("freeSpinTrigger", "freeSpinRetrigger")
     )
     trigger_rate = (fs_triggers / len(base_books) * 100) if base_books else 0
     print(f"\nFS Trigger rate: {trigger_rate:.2f}% ({fs_triggers} triggers from {len(base_books)} base spins)")
@@ -158,7 +158,7 @@ def analyze_books(books):
     for b in fs_books:
         mults = []
         for e in b.get("events", []):
-            if e.get("type") == "UPDATE_GLOBAL_MULT":
+            if e.get("type") == "updateGlobalMult":
                 m = e.get("globalMult")
                 if isinstance(m, (int, float)):
                     mults.append(int(m))
@@ -188,9 +188,9 @@ def analyze_books(books):
         saw_fs_start = False
         for e in events:
             typ = e.get("type")
-            if typ in ("FREESPINTRIGGER", "FREESPINRETRIGGER", "UPDATE_FS"):
+            if typ in ("freeSpinTrigger", "freeSpinRetrigger", "updateFreeSpin"):
                 saw_fs_start = True
-            if typ == "REVEAL" and saw_fs_start:
+            if typ == "reveal" and saw_fs_start:
                 fs_reveals_checked += 1
                 is_full, _, _ = extract_reel3_marked_fraction(e.get("board", []))
                 if is_full:
@@ -211,7 +211,7 @@ def analyze_books(books):
         board_state = None
         pending_marked_positions = []
         for e in b.get("events", []):
-            if e.get("type") == "REVEAL":
+            if e.get("type") == "reveal":
                 board = e.get("board", [])
                 board_state = []
                 for col in board:
@@ -222,7 +222,7 @@ def analyze_books(books):
                         for s in col
                     ])
                 pending_marked_positions = []
-            elif e.get("type") in ("WIN_DATA",) and board_state:
+            elif e.get("type") in ("winInfo",) and board_state:
                 for win in e.get("wins", []):
                     for p in win.get("positions", []):
                         r = p["reel"]
@@ -231,7 +231,7 @@ def analyze_books(books):
                             if board_state[r][rw].get("marked"):
                                 marked_win_count += 1
                                 pending_marked_positions.append((r, rw))
-            elif e.get("type") == "TUMBLE_BOARD" and pending_marked_positions:
+            elif e.get("type") == "tumbleBoard" and pending_marked_positions:
                 exploding = set((p["reel"], p.get("row", 0)) for p in e.get("explodingSymbols", []))
                 for pos in pending_marked_positions:
                     if pos not in exploding:
@@ -251,12 +251,12 @@ def analyze_books(books):
     current_tumbles = 0
     for b in books:
         for e in b.get("events", []):
-            if e.get("type") == "REVEAL":
+            if e.get("type") == "reveal":
                 total_reveals += 1
                 if current_tumbles >= 3:
                     long_cascade_count += 1
                 current_tumbles = 0
-            elif e.get("type") == "TUMBLE_BOARD":
+            elif e.get("type") == "tumbleBoard":
                 total_tumbles += 1
                 current_tumbles += 1
     if total_reveals > 0:
