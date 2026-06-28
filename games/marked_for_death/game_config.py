@@ -68,13 +68,22 @@ class GameConfig(Config):
             self.freespin_triggers[self.freegame_type][n] = val
         self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
 
-        # Load reels manually - simple one symbol per line format
+        # Load reels manually with robust comma stripping
         reel_files = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
         self.reels = {}
         for name, filename in reel_files.items():
             path = os.path.join(self.reels_path, filename)
             with open(path, "r", encoding="utf-8") as f:
-                symbols = [line.strip() for line in f if line.strip()]
+                symbols = []
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    # Remove trailing comma if present (supports both formats)
+                    if line.endswith(","):
+                        line = line[:-1].strip()
+                    if line:
+                        symbols.append(line)
             self.reels[name] = symbols
 
         self.bet_modes = [
