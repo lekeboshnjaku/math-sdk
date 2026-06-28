@@ -29,7 +29,7 @@ from collections import defaultdict
 import sys
 
 def load_books(folder_path: str):
-    """Load all books from a folder. Handles .jsonl, .json, and optional .zst."""
+    """Load the MOST RECENT books file only (avoids mixing old placeholder 0-win books)."""
     books = []
     patterns = ["*books*.jsonl", "*books*.json", "*books*.jsonl.zst", "*books*.jsonl.zstd"]
     found_files = []
@@ -40,55 +40,58 @@ def load_books(folder_path: str):
         print(f"No books files found in {folder_path}")
         return books
 
-    for f in sorted(set(found_files)):
-        if not os.path.isfile(f):
-            continue
-        try:
-            if f.endswith(('.zst', '.zstd')):
-                try:
-                    import zstandard as zstd
-                    import io
-                    with open(f, "rb") as fh:
-                        dctx = zstd.ZstdDecompressor()
-                        with dctx.stream_reader(fh) as reader:
-                            txt = io.TextIOWrapper(reader, encoding="utf-8")
-                            for line in txt:
-                                line = line.strip()
-                                if line:
-                                    obj = json.loads(line)
-                                    if isinstance(obj, dict) and "events" in obj:
-                                        books.append(obj)
-                except ImportError:
-                    print(f"Skipping compressed {f} (zstandard not installed)")
-                    continue
-                except Exception as e:
-                    print(f"Error decompressing {f}: {e}")
-                    continue
-            else:
-                with open(f, "r", encoding="utf-8") as fh:
-                    content = fh.read().strip()
-                    if not content:
-                        continue
-                    if content.startswith("["):
-                        # JSON array format
-                        data = json.loads(content)
-                        if isinstance(data, list):
-                            for item in data:
-                                if isinstance(item, dict) and "events" in item:
-                                    books.append(item)
-                        elif isinstance(data, dict) and "events" in data:
-                            books.append(data)
-                    else:
-                        # Assume JSONL (one book per line)
-                        for line in content.splitlines():
+    # Sort by modification time, newest first, take only the latest
+    found_files = sorted(set(found_files), key=os.path.getmtime, reverse=True)
+    latest = found_files[0] if found_files else None
+    if not latest or not os.path.isfile(latest):
+        print(f"No valid books file in {folder_path}")
+        return books
+
+    print(f"Loading latest books file: {latest}")
+    try:
+        if latest.endswith(('.zst', '.zstd')):
+            try:
+                import zstandard as zstd
+                import io
+                with open(latest, "rb") as fh:
+                    dctx = zstd.ZstdDecompressor()
+                    with dctx.stream_reader(fh) as reader:
+                        txt = io.TextIOWrapper(reader, encoding="utf-8")
+                        for line in txt:
                             line = line.strip()
                             if line:
                                 obj = json.loads(line)
                                 if isinstance(obj, dict) and "events" in obj:
                                     books.append(obj)
-        except Exception as e:
-            print(f"Warning: failed to load {f}: {e}")
-            continue
+            except ImportError:
+                print(f"Skipping compressed {latest} (zstandard not installed)")
+                return books
+            except Exception as e:
+                print(f"Error decompressing {latest}: {e}")
+                return books
+        else:
+            with open(latest, "r", encoding="utf-8") as fh:
+                content = fh.read().strip()
+                if not content:
+                    return books
+                if content.startswith("["):
+                    data = json.loads(content)
+                    if isinstance(data, list):
+                        for item in data:
+                            if isinstance(item, dict) and "events" in item:
+                                books.append(item)
+                    elif isinstance(data, dict) and "events" in data:
+                        books.append(data)
+                else:
+                    for line in content.splitlines():
+                        line = line.strip()
+                        if line:
+                            obj = json.loads(line)
+                            if isinstance(obj, dict) and "events" in obj:
+                                books.append(obj)
+    except Exception as e:
+        print(f"Warning: failed to load {latest}: {e}")
+        return books
 
     return books
 
