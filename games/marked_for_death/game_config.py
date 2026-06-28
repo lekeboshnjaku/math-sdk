@@ -20,9 +20,6 @@ class GameConfig(Config):
         self.construct_paths(self.game_id)
 
         # Force reels_path to always be next to this file.
-        # The base class computes it based on where the *library* is installed,
-        # which is wrong when developing the game separately or when the package
-        # is in a venv/src layout.
         self.reels_path = os.path.join(os.path.dirname(__file__), "reels")
 
         # Game Dimensions
@@ -51,9 +48,7 @@ class GameConfig(Config):
             (3, "L2"): 4,
             (5, "L3"): 50,
             (4, "L3"): 12,
-            (3, "L3"): 3,
-            (5, "L4"): 40,
-            (4, "L4"): 10,
+            (5, "L4"): 10,
             (3, "L4"): 3,
             (5, "L5"): 30,
             (4, "L5"): 8,
@@ -73,23 +68,14 @@ class GameConfig(Config):
             self.freespin_triggers[self.freegame_type][n] = val
         self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
 
-        # Load reels manually (more reliable) — must produce the same shape as read_reels_csv:
-        # list of num_reels lists (one per reel), each containing the stop symbols for that reel.
+        # Load reels manually - simple one symbol per line format
         reel_files = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
         self.reels = {}
         for name, filename in reel_files.items():
             path = os.path.join(self.reels_path, filename)
             with open(path, "r", encoding="utf-8") as f:
-                lines = [line.strip() for line in f if line.strip()]
-            # Transpose columns (this CSV format has rows=stops, columns=reels) into per-reel strips
-            reelstrips = [[] for _ in range(self.num_reels)]
-            for line in lines:
-                cols = line.split(",")
-                for reel_idx, raw in enumerate(cols):
-                    cleaned = "".join(ch for ch in raw if ch.strip().isalnum())
-                    if cleaned:
-                        reelstrips[reel_idx].append(cleaned)
-            self.reels[name] = reelstrips
+                symbols = [line.strip() for line in f if line.strip()]
+            self.reels[name] = symbols
 
         self.bet_modes = [
             BetMode(
