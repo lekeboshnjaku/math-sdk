@@ -1,0 +1,323 @@
+MARKED FOR DEATH
+Math Design Document
+Based on Wild Bandito Mathematical Structure
+
+Document Version: 0.7
+Date: 2026-06-28
+Status: Detailed Production Design
+Target RTP: 96.73%
+Grid: 5 Reels x 4 Rows (1024 Ways)
+Max Win: 25,000x
+Volatility: Medium (session) / High Ceiling
+
+Design Philosophy
+Replicate the core mathematical satisfaction of Wild Bandito (persistent multiplier growth + Marked symbol conversion to Wilds) while adapting the theme to a high-tension assassin / death fantasy. Wins fuel the multiplier. The multiplier fuels bigger wins. Marked targets become unstoppable Wilds as the death toll rises.
+
+Revised & expanded for precision, completeness, and certifiable implementation.
+
+1. GAME OVERVIEW & TARGETS
+
+1.1 Key Parameters
+Parameter | Target Value | Notes
+RTP (Overall) | 96.73% | Matches Wild Bandito certified RTP
+Session Volatility | Medium | Strong base engagement + high bonus ceiling
+Max Win (Advertised) | 25,000x | High-end potential for marketing
+Grid | 5 x 4 | 1024 Ways (left-to-right adjacent)
+Hit Rate (Overall) | 28.7 - 29.0% | Target similar to source
+~68 - 70% Primary session engagement driver
+~26 - 28% High volatility segment
+Base Game RTP
+Free Spins RTP
+
+1.2 Design Philosophy
+Marked for Death delivers the same satisfying core loop that made Wild Bandito successful: wins create Marked conversions to Wilds, which enable more wins, which grow a persistent multiplier. The multiplier makes every small win meaningful because it amplifies future cascades within the spin (and the entire bonus round). The assassin theme reinforces the fantasy: 'Marked' symbols are targets that, once hit, become lethal Wild assassins themselves.
+
+1.3 Design Goals
+- Faithfully replicate the proven Wild Bandito math skeleton (cascades + Marked-to-Wild conversion + growing multiplier).
+- Create strong tension and 'one more spin' engagement through persistent multiplier growth.
+- Make Free Spins dramatically powerful via a guaranteed full Marked reel on reel 3 + non-resetting multiplier.
+- Maintain medium base volatility with explosive bonus potential (25,000x ceiling).
+- Keep all rules clean, unambiguous, and straightforward to certify and simulate.
+- Provide a solid foundation for future differentiators (e.g. Giant Wild Banner / Execution feature).
+
+Page 1 | Math Design Document v0.7 | Target RTP 96.73% | 25,000x Max Win | Generated 2026-06-28
+
+MARKED FOR DEATH | Math Design Document v0.7 | Confidential
+
+2. REEL STRUCTURE & PAY SYSTEM
+
+2.1 Core Specifications
+Specification | 
+Reels | 5
+Rows | 4
+Pay System | 1024 Ways - 3+ adjacent symbols left to right starting on reel 1
+Cascading | Yes - winning symbols are removed and new symbols fall from the top
+Wild Substitution | Substitutes for all symbols except Scatter
+
+2.2 Cascading Rules (Precise)
+
+Scatter
+Triggers Free Spins. Does not pay in base game.
+
+Cascades (tumbles) continue until no further winning combinations exist on the board.
+  1. All winning symbols are evaluated and paid using the current multiplier.
+  2. Marked symbols that participated in any paid win are converted to Wilds (post-payment, pre-cascade).
+  3. All symbols that formed winning combinations are removed from the grid.
+  4. Symbols above removed positions fall down to fill gaps.
+  5. New symbols are introduced from the top of each reel to refill the 4-row grid.
+  6. The board is re-evaluated. If new wins exist, repeat from step 1.
+  7. After a cascade that paid wins, the multiplier increases by +1 before the next evaluation (if any).
+
+**Conversion Note (v0.7)**: After a Marked symbol is converted to a Wild, the new Wild should not explode in the current cascade. It participates in future cascades as a normal Wild.
+
+The entire sequence (initial board + all cascades) constitutes one 'spin' or 'round'.
+
+3. CORE MECHANIC: MARKED SYMBOLS
+
+3.1 Definition
+Marked symbols are an enhanced state of regular Low and High symbols. They are the primary driver of both base game engagement and Free Spins power. Visually they must have clear distinction (glow, frame, icon, blood mark, etc.) so players instantly recognize the opportunity.
+
+3.2 Spawn Rules
+  Base Game: Low and High symbols landing on reels 2, 3, or 4 have a probability P_marked (TBD via simulation, suggested range 18-28%) of spawning as Marked.
+  Wilds and Scatters never spawn as Marked.
+  Free Spins: At the start of every free spin, reel 3 is fully filled with Marked symbols. During Free Spins, normal symbols landing on reels 2 and 4 have a higher chance of becoming Marked compared to the base game. Marked symbols appear more often on reels 2 and 4 in Free Spins.
+  New symbols that fall during cascades may also become Marked. In Free Spins, reel 3 symbols follow the full Marked rule.
+
+3.3 Payout & Conversion Rules
+  A Marked symbol pays exactly the same as its base symbol value.
+  If a Marked symbol is part of any paid winning combination during an evaluation, it is converted to a Wild after the win is paid but before the cascade occurs.
+  Conversion is permanent for the remainder of the current spin's cascades.
+  Wilds created via conversion participate in subsequent cascades and can help form new wins.
+  Wilds (natural or converted) NEVER convert further and are not considered Marked.
+
+3.4 Why This Mechanic Works
+Conversion creates a powerful positive feedback loop within a single spin: a win involving Marked symbols removes blockers and adds Wilds for the next tumble. Combined with the growing multiplier, small early wins can snowball into massive cascades. In Free Spins the guaranteed full Marked reel on reel 3 dramatically increases conversion frequency, turning the bonus into a high-tension execution sequence.
+
+- The current multiplier must be prominently displayed at all times (top or side of the reels).
+
+4. PERSISTENT MULTIPLIER SYSTEM
+
+The multiplier is the central tension and progression system. Every winning cascade increases future payout potential. This is deliberately different from flat multipliers.
+
+4.1 Base Game Multiplier Rules
+  Starting value: x1 at the beginning of every base spin.
+  Increment: After any evaluation step that pays at least one win (a successful cascade), the multiplier increases by exactly +1.
+  Application: The new multiplier value applies to all wins in subsequent cascades of the same spin.
+  Reset: The multiplier is reset to x1 for the next base spin. It does not carry between spins.
+  Persistence within spin: The multiplier climbs across all cascades of one spin and is used for every payout in that sequence.
+
+4.2 Free Spins Multiplier Rules (CRITICAL DIFFERENCE)
+  The multiplier starts at x2 for the first free spin of every new Free Spins round.
+  Increment: +1 after every winning cascade, exactly as in base game.
+  NO RESET between free spins: The multiplier value at the end of one free spin becomes the starting multiplier for the next free spin in the same round.
+  The multiplier continues to grow for the entire duration of the Free Spins round.
+  Only when the FS round fully ends (no retrigger) does the multiplier reset for the subsequent base game spin.
+This non-resetting behavior in FS is a key source of the 'building dread' and high max win potential. It must be implemented exactly.
+
+4.3 Display & Player Communication
+
+- Clear visual feedback (animation, color shift, sound) should accompany every +1 increase.
+- In FS, every round starts with a guaranteed x2 multiplier (persistent and growing) - lean into it.
+
+4.4 Multiplier & Max Win
+There is no hard cap on the multiplier itself. The 25,000x max win is the theoretical ceiling. Simulation must validate that extreme multiplier + long cascade combinations are possible but appropriately rare.
+
+5. FREE SPINS FEATURE
+
+5.1 Trigger & Award
+Initial Free Spins | 3 Scatters | 12 | +2 per extra Scatter (4=14, 5=16) | Current remaining + new award
+
+5.2 Free Spins Rules (Full Detail)
+
+Retrigger (during FS)
+Same rules apply
+
+  Scatter symbols can land on any reel and trigger from any position (no paylines required).
+  At the start of each free spin (including the first), reel 3 is fully filled with Marked symbols. The full Marked stack on reel 3 is applied at the start of each free spin, after the previous spin’s cascades have fully completed. During Free Spins, normal symbols landing on reels 2 and 4 have a higher chance of becoming Marked compared to the base game. Marked symbols appear more often on reels 2 and 4 in Free Spins.
+  All standard cascade, Marked conversion, and multiplier rules apply, with the critical addition that the multiplier does not reset between free spins.
+  Any Scatters that land during FS award +2 free spins each and are added to the remaining count.
+  Retriggered spins continue with the current multiplier value (it keeps growing). Every new Free Spins round (including retriggers) starts with a guaranteed x2 multiplier.
+
+  At the conclusion of the entire FS round, any remaining multiplier is discarded. The next base spin starts at x1.
+
+5.3 Player Experience Goal for FS
+Players should feel the 'contract' tightening. The guaranteed full Marked vertical stack on reel 3 creates frequent conversions. Each successful cascade raises the stakes for the next. During Free Spins, Marked symbols appear more often on reels 2 and 4. Long FS rounds start with a guaranteed x2 multiplier and climb from there.
+
+6. SYMBOL SET & PAYTABLE
+
+6.1 Symbol Types
+Type | Count | Role
+Low Symbols | 5 | Base filler (themed 10/J/Q/K/A or assassin equivalents)
+High Symbols | 4 | Main payout drivers - distinctive themed high pays
+Wild | 1 | Substitutes for all except Scatter. Never converts.
+Scatter |  | 1 Triggers Free Spins only. No base payout.
+Marked State |  | N/A Special state applied to Low + High symbols only
+
+6.2 Paytable (5-of-a-Kind Base Values)
+These are initial values. Final tuning occurs through simulation to hit exact RTP while preserving feel.
+
+Symbol | 5 of a Kind | 4 of a Kind | 3 of a Kind
+High 1 (Top) | 500 | 100 | 20
+High 2 | 300 | 80 | 15
+High 3 | 200 | 50 | 12
+High 4 | 150 | 40 | 10
+Low 1 | 80 | 20 | 5
+Low 2 | 60 | 15 | 4
+Low 3 | 50 | 12 | 3
+Low 4 | 40 | 10 | 3
+Low 5 | 30 | 8 | 2
+
+Note: 2-of-a-kind payouts are not used (standard for 1024 Ways games).
+The multiplier applies to all winning combinations. A 5oak High 1 at x12 multiplier pays 500 x 12 = 6,000x stake (before other cascades).
+
+7. SYMBOL BEHAVIOR & CONVERSION FLOWS
+
+7.1 Marked Conversion Flow (Per Cascade)
+Exact sequence that must be followed in code:
+  1. Evaluate current board for all left-to-right adjacent winning combinations (3+).
+  2. Calculate total win for this evaluation using current multiplier x paytable values.
+  3. Identify every Marked symbol instance that participates in at least one of the winning combinations.
+  4. Pay/award the total win to the player balance.
+  5. Convert all identified Marked symbols to Wild symbols (update grid state).
+  6. Remove all symbols that were part of any winning combination in this evaluation.
+  7. Drop / cascade new symbols into the vacated positions (respecting any forced Marked rules in FS).
+  8. Increment the current multiplier by +1.
+  9. If new winning combinations now exist, repeat from step 1. Otherwise end the spin/round.
+
+**Conversion Note (v0.7)**: After a Marked symbol is converted to a Wild, the new Wild should not explode in the current cascade. It participates in future cascades as a normal Wild.
+
+7.2 Wild Rules
+  Wild substitutes for any Low or High symbol in win evaluation.
+  Wild does not substitute for Scatter.
+  Natural Wilds and converted Wilds behave identically.
+  Wilds do not carry a 'Marked' state and cannot be converted.
+
+7.3 Scatter Rules
+  3 or more Scatters anywhere on the 5x4 grid trigger Free Spins.
+  Scatters do not pay in the base game.
+  During Free Spins, additional Scatters award +2 FS each.
+  Retrigger is possible and follows identical award rules.
+  Scatters are removed or stay? (Standard: they participate in removal only if part of a win, but they rarely form wins.)
+
+8. RTP, HIT RATE & VOLATILITY TARGETS
+
+8.1 Initial Contribution Targets
+Segment | Target RTP Contribution | Target Hit Rate | Notes
+Base Game | 68 - 70% | 28.0 - 28.5% | Core engagement loop
+Free Spins | 26 - 28% | 0.35 - 0.45% | High volatility chase
+Overall | 96.73% | 28.7 - 29.0% | Primary certification target
+
+8.2 Mandatory Simulation & Validation Plan
+- Minimum 100 million spins for initial RTP validation (1 billion+ recommended for max win distribution).
+- Track and report: overall RTP, base vs FS split, hit rate (base / FS / overall).
+- Multiplier distribution: average multiplier on winning spins, max multiplier observed, frequency of x10+, x20+.
+- Cascade length distribution (1-tumble, 2-tumble ... 8+ tumbles).
+- Marked conversion rate per spin in base and in FS.
+- FS trigger frequency, average FS length, average FS multiplier at end of round.
+- Max win distribution and hit rate for 1000x+, 5000x+, 10000x+, 25000x.
+- Volatility index calculation and comparison to Wild Bandito reference.
+- Full audit trail of any parameter changes during tuning with before/after RTP impact.
+
+8.3 Tuning Levers
+- Base Marked spawn probability on reels 2-3-4.
+- Relative weighting of High vs Low symbols.
+- Scatter frequency (FS hit rate).
+- Paytable values (small adjustments only after structural tuning).
+- Any future special feature weights (Giant Wild Banner, etc.).
+
+9. IMPLEMENTATION PRIORITIES & GUIDELINES
+
+9.1 Recommended Implementation Order
+Priority | Component | Description
+1 | Base Game Core | Reels, 1024 Ways evaluation, cascading engine, basic symbol removal & drop
+2 | Marked Symbol System | Spawn logic on reels 2-3-4 + conversion to Wild post-payment, pre-cascade
+3 | Persistent Multiplier | Per-spin tracking, +1 after winning cascades, display, reset rules
+4 | FS Foundation | Scatter trigger, FS counter, basic FS loop with same mechanics as base
+5 | FS Enhancements | Reel 3 full Marked each spin (guaranteed stack) + non-resetting multiplier carry across FS
+
+6 | RTP Validation | Simulation harness, metrics collection, tuning loop to 96.73%
+7 | Dev Playground | One-click test buttons for Marked conversion, long cascades, FS multiplier growth
+
+9.2 Critical State & Timing Rules (Mandatory)
+  Each grid position must track its own 'is_marked' boolean independently of symbol type.
+  Marked-to-Wild conversion must occur AFTER win evaluation and AFTER payout calculation but BEFORE any symbols are removed for the cascade.
+  Multiplier must be applied to the win calculation for the current evaluation, then incremented for the next (if wins occurred).
+  In Free Spins, the full-Marked rule for reel 3 (guaranteed vertical stack) must be applied at the beginning of each individual free spin, after the previous spin's cascades have completed. Reels 2 and 4 have no forced Marked symbols.
+  The FS multiplier carry must be implemented at the round level, not per-spin. Reset only on FS round exit.
+  Never mix normal board generation with forced states inside the same path. Use dedicated force logic when special boards are required.
+
+9.3 Recommended Debug / Logging (Dev & Cert)
+- Log at start of spin: board state + current multiplier + is_FS flag.
+- Log after every evaluation: wins found, symbols converted, new multiplier, board after cascade.
+- Log FS entry/exit with starting and ending multiplier.
+- Expose a 'force Marked board' and 'force FS with high multiplier' debug path for testing.
+
+9.4 Testing Checklist
+- [ ] Single cascade win with Marked conversion produces correct Wilds on next board.
+- [ ] Multiplier climbs correctly across 4+ cascades in one spin.
+- [ ] FS round: multiplier continues growing across multiple free spins.
+- [ ] Reel 3 full Marked vertical stack applied correctly at the start of every free spin (including retriggers). Reels 2 and 4 use normal spawning rules with no forced Marked symbols.
+- [ ] Scatter during FS correctly adds spins without resetting multiplier.
+- [ ] Wild substitution works for converted Wilds in later cascades.
+- [ ] No win = no multiplier increase.
+- [ ] RTP within tolerance after 100M+ spins.
+
+10. EDGE CASES & SPECIAL RULES
+
+10.1 Documented Edge Cases
+  A cascade creates new Marked symbols that then win in the next evaluation: they convert normally.
+  Multiple Marked symbols in the same win: all qualifying ones convert.
+  A win that involves only Wilds (no original Marked): no additional conversions occur from that win.
+  FS ends with a very high multiplier (e.g. x18): this is expected and desirable for max win chases.
+  Retrigger on the final spin of FS: additional spins are appended with the current multiplier value.
+  Board fills with all Wilds via conversions: this is allowed and should pay if valid ways exist.
+
+10.2 Open Items for v0.7 / Simulation
+- Confirm whether new dropped symbols in FS are subject to full-marked or normal spawn weighting.
+- Any soft cap or visual treatment for extremely high multipliers (x30+).
+- Buy Bonus implementation and its RTP contribution (if planned).
+
+11. FUTURE ENHANCEMENTS / DIFFERENTIATORS
+
+The following are not part of the core replication but are under consideration for Marked for Death to create a distinct identity while preserving the beloved math.
+
+- Reactive wild stacking rates (different base vs FS conversion probabilities).
+
+11.1 Giant Wild Banner (Execution) - FS Only Rare Feature
+
+Description (high level): During Free Spins, a rare condition can trigger the 'Giant Wild Banner'.
+  Reels 2, 3, and 4 become entirely Wild for that spin (full wild reels).
+  Global multiplier receives a large one-time boost (+10 or similar) plus a small random bonus (+1 or +2).
+  Occurs at most once per FS round.
+  Requires dedicated board forcing logic: do NOT run normal generation then patch. Build the special board directly.
+  Reset once-per-bonus flags at the START of a new free spins round.
+Implementation warning: This is a forced state. Follow strict separation from normal reel generation to avoid state corruption and analyzer mismatches.
+
+11.2 Other Potential Polish
+- Slightly different FS multiplier growth curve (e.g. +1 or +2 per tumble, or starting multiplier).
+
+- Themed 'Death Mark' progressive or collection elements (outside core math).
+
+12. VERSION HISTORY
+
+0.1 | 2026-06-27 | Initial | Draft outline based on Wild Bandito
+
+0.2 | 2026-06-27 | Initial | Full first pass: parameters, rules, paytable, priorities
+
+0.3 | 2026-06-27 | Grok Revised | Refined: only reel 3 has guaranteed full Marked vertical stack in FS (reels 2 and 4 use normal symbols). Precise cascade timing, FS multiplier carry (non-reset), edge cases, implementation mandates, future features, validation plan, debug guidance.
+
+0.4 | 2026-06-27 | Grok | Further clarifications for reel 3 only guaranteed full Marked vertical stack in FS; reels 2 and 4 explicitly normal symbols (no guaranteed Marked). Updated design goals, spawn rules, FS rules, player experience, implementation priorities, and version history for consistency.
+
+0.5 | 2026-06-27 | Grok | FS Marked rule precision: only reel 3 receives guaranteed full vertical stack in every FS (incl. retriggers); reels 2 and 4 use normal symbols + base P_marked even in FS. Fixed Testing Checklist (9.4). Locked FS multiplier entry to x1 (no carry-in from base). General consistency pass on all FS Marked references. Added Revision Notes.
+
+0.6 | 2026-06-27 | Grok | Free Spins now start with a guaranteed multiplier of x2 (instead of x1). During Free Spins, Marked symbols appear more often on reels 2 and 4. Reel 3 remains the only reel that is fully forced with Marked symbols. Updated Section 4.2 and related text for consistency.
+
+0.7 | 2026-06-28 | Clarifications | Added explicit conversion behavior note (new Wild does not explode in current cascade) in Sections 2.2 and 7.1. Improved wording in Sections 3.2 and 5.2 for Free Spins marked spawn rates using simple language. Added reel 3 force timing clarification in Section 5.2. Updated Version History and added Revision Notes (v0.7). Bumped version, footers, and status.
+
+Document Status
+This is the detailed production design document. All values and rules are subject to simulation validation and certification feedback. Any changes must be documented with impact analysis and version bump. The core math is intentionally close to a proven high-performing title; deviations should be deliberate and well-justified.
+
+Revision Notes (v0.7)
+v0.7 adds precision around conversion timing and explosion behavior: After a Marked symbol converts to Wild, the new Wild does not explode in the same cascade and participates normally in future cascades. Wording in spawn rules (Sections 3.2 and 5.2) simplified for consistency. Added explicit statement that the reel 3 full Marked stack is applied at the start of each free spin after prior cascades complete. Version history and footers updated to v0.7.
+
+END OF DOCUMENT
