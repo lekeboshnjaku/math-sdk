@@ -19,6 +19,12 @@ class GameConfig(Config):
         self.rtp = 0.9673
         self.construct_paths(self.game_id)
 
+        # Force reels_path to always be next to this file.
+        # The base class computes it based on where the *library* is installed,
+        # which is wrong when developing the game separately or when the package
+        # is in a venv/src layout.
+        self.reels_path = os.path.join(os.path.dirname(__file__), "reels")
+
         # Game Dimensions
         self.num_reels = 5
         self.num_rows = [4] * self.num_reels
