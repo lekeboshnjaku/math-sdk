@@ -17,7 +17,7 @@ class GameConfig(Config):
         self.wincap = 25000
         self.win_type = "ways"
         self.rtp = 0.9673
-        self.construct_paths()
+        self.construct_paths(self.game_id)
 
         # Game Dimensions
         self.num_reels = 5
