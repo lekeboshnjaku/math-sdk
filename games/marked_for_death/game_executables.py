@@ -63,24 +63,21 @@ class GameExecutables(GameCalculations):
         """Convert marked in wins to Wild AFTER emit_tumble_win_events (paid)
         but BEFORE tumble_game_board.
         Set .explode = False so the new Wild survives the current cascade.
-        Self-contained: scans current win_data["wins"] for positions that have marked on board right now.
-        Does not depend on marked_winners_this_eval (reset by later evaluate_ways_board calls).
         """
-
+        marked_winners = getattr(self, "marked_winners_this_eval", [])
         to_prune = set()
-        for win in self.win_data.get("wins", []):
-            for pos in win.get("positions", []):
-                r, row = pos.get("reel"), pos.get("row")
-                if r is not None and row is not None and self.board[r][row].check_attribute("marked"):
-                    to_prune.add((r, row))
-                    # bypass special func for W to avoid mult_values KeyError (not in dists yet)
-                    old_funcs = self.special_symbol_functions
-                    self.special_symbol_functions = {k: v for k, v in old_funcs.items() if k != "W"}
-                    wild_sym = self.create_symbol("W")
-                    self.special_symbol_functions = old_funcs
-                    self.board[r][row] = wild_sym
-                    self.board[r][row].explode = False
-        # Prune from win_data["wins"] so tumble_board_event excludes them from explodingSymbols.
+        for pos in marked_winners:
+            r, row = pos["reel"], pos["row"]
+            to_prune.add((r, row))
+            if self.board[r][row].check_attribute("marked"):
+                # bypass special func for W to avoid mult_values KeyError
+                old_funcs = self.special_symbol_functions
+                self.special_symbol_functions = {k: v for k, v in old_funcs.items() if k != "W"}
+                wild_sym = self.create_symbol("W")
+                self.special_symbol_functions = old_funcs
+                self.board[r][row] = wild_sym
+                self.board[r][row].explode = False
+
         if to_prune:
             for w in self.win_data.get("wins", []):
                 w["positions"] = [
