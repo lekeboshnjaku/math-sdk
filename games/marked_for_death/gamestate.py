@@ -8,9 +8,12 @@ class GameState(GameStateOverride):
     """Handle basegame and freegame logic."""
 
     def run_spin(self, sim: int, simulation_seed=None) -> None:
-        self.reset_seed(sim)
         self.repeat = True
+        attempt = 0
         while self.repeat:
+            # Use varying seed per repeat attempt so different boards are generated
+            # (important for criteria like win_criteria=0 that require specific outcomes)
+            self.reset_seed(sim + attempt * 1000003)
             self.reset_book()
             self.draw_board(emit_event=False)
             self.promote_marked_symbols()
@@ -37,6 +40,7 @@ class GameState(GameStateOverride):
 
             self.evaluate_finalwin()
             self.check_repeat()
+            attempt += 1
 
         self.imprint_wins()
 
