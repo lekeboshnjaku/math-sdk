@@ -1,9 +1,9 @@
 """Marked for Death game configuration (based on v0.5 Math Design Document)."""
 
+import os
 from src.config.config import Config
 from src.config.distributions import Distribution
 from src.config.config import BetMode
-import os
 
 
 class GameConfig(Config):
@@ -69,11 +69,14 @@ class GameConfig(Config):
         }
         self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
 
-        # Reels (placeholders copied from example; replace with proper 4-row strips per v0.5)
-        reels = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
+        # Load reels manually (more reliable)
+        reel_files = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
         self.reels = {}
-        for r, f in reels.items():
-            self.reels[r] = self.read_reels_csv(os.path.join(self.reels_path, f))
+        for name, filename in reel_files.items():
+            path = os.path.join(self.reels_path, filename)
+            with open(path, "r", encoding="utf-8") as f:
+                symbols = [line.strip() for line in f if line.strip()]
+            self.reels[name] = symbols
 
         self.bet_modes = [
             BetMode(
