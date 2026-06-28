@@ -17,7 +17,7 @@ class GameConfig(Config):
         self.wincap = 25000
         self.win_type = "ways"
         self.rtp = 0.9673
-        self.construct_paths(self.game_id)
+        self.construct_paths()
 
         # Force reels_path to always be next to this file.
         # The base class computes it based on where the *library* is installed,
