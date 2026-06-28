@@ -25,7 +25,7 @@ if __name__ == "__main__":
     profiling = False
 
     num_sim_args = {
-        "base": 100000,  # example for heavy run; increase as needed (e.g. 1_000_000+)
+        "base": 10000,  # example for heavy run; increase as needed (e.g. 1_000_000+)
     }
 
     run_conditions = {

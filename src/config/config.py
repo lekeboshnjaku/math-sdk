@@ -19,7 +19,7 @@ class Config:
         self.game_name = "sample_lines"
         self.output_regular_json = True  # if True, outputs .json if compression = False. If False, outputs .jsonl
         if self.game_id != "0_0_sample":
-            self.construct_paths()
+            self.construct_paths(self.game_id)
 
         # Win information
         self.min_denomination = 0.1
@@ -139,8 +139,10 @@ class Config:
 
         return reelstrips
 
-    def construct_paths(self) -> None:
+    def construct_paths(self, game_id: str = None) -> None:
         """Assign all output file paths"""
+        if game_id is not None:
+            self.game_id = game_id
         self.reels_path = os.path.join(PATH_TO_GAMES, self.game_id, "reels")
         self.library_path = os.path.join(PATH_TO_GAMES, self.game_id, "library")
         self.publish_path = os.path.join(PATH_TO_GAMES, self.game_id, "library", "publish_files")

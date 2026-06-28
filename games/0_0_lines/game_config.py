@@ -23,7 +23,7 @@ class GameConfig(Config):
         self.wincap = 5000.0
         self.win_type = "lines"
         self.rtp = 0.9700
-        self.construct_paths()
+        self.construct_paths(self.game_id)
 
         # Game Dimensions
         self.num_reels = 5
