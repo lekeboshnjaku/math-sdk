@@ -73,4 +73,8 @@ class GameExecutables(GameCalculations):
                 self.special_symbol_functions = old_funcs
                 self.board[r][row] = wild_sym
                 self.board[r][row].explode = False
+                # Prune from win_data["wins"] so tumble_board_event (which sources explodingSymbols
+                # exclusively from win_data) does not list converted positions as exploding.
+                for w in self.win_data.get("wins", []):
+                    w["positions"] = [p for p in w.get("positions", []) if not (p["reel"] == r and p["row"] == row)]
 
