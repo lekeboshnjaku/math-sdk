@@ -23,6 +23,7 @@ class GameState(GameStateOverride):
             self.emit_tumble_win_events()
             self.convert_marked_to_wild()
 
+            cascade = 0
             while self.win_data["totalWin"] > 0 and not (self.wincap_triggered):
                 self.tumble_game_board()
                 self.promote_marked_symbols()
@@ -30,6 +31,9 @@ class GameState(GameStateOverride):
                 self.evaluate_ways_board()
                 self.emit_tumble_win_events()
                 self.convert_marked_to_wild()
+                cascade += 1
+                if cascade % 5 == 0:
+                    print(f"    Sim {sim} cascade {cascade} (mult x{self.global_multiplier})", flush=True)
 
             self.set_end_tumble_event()
             self.win_manager.update_gametype_wins(self.gametype)
