@@ -11,22 +11,21 @@ from src.write_data.write_configs import generate_configs
 
 if __name__ == "__main__":
 
-    # Memory-friendly settings for 8 vCPU / 32 GB RAM VM (ccx33)
-    # - num_threads=4: ~half the cores to leave headroom for OS + main process + avoid OOM
-    # - batching_size=1000: limits memory per worker process (each holds ~500 books in RAM for 2000 total sims)
-    #   This prevents large in-memory book collections that can trigger OOM killer.
-    # - Keep compression=False during sims (zstd can add peak memory).
-    # Total peak for sim phase should stay well under 8-10 GB even with real reels + cascades.
-    # If still OOM: drop to num_threads=2 and/or batching_size=500.
-    # Monitor on VM with: htop or `watch -n1 'free -h; ps aux --sort=-%mem | head'`
+    # Settings for heavy real simulations on 8 vCPU / 32 GB RAM VM
+    # - num_threads=4: safe concurrency for 8 cores, leaves headroom
+    # - batching_size=20000: good balance for heavy sims (adjust down if memory pressure)
+    # - compression=True: produces .zst files, saves disk, standard for heavy runs
+    # - For millions of sims, monitor with htop; if OOM reduce threads or batch
+    # Real reels required for non-zero RTP, proper FS/cascades, real numbers.
+    # Placeholders will give 0.0 RTP and degenerate results.
     num_threads = 4
     rust_threads = 4
-    batching_size = 1000
-    compression = False
+    batching_size = 20000
+    compression = True
     profiling = False
 
     num_sim_args = {
-        "base": 2000,
+        "base": 100000,  # example for heavy run; increase as needed (e.g. 1_000_000+)
     }
 
     run_conditions = {
