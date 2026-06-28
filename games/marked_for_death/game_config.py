@@ -97,58 +97,10 @@ class GameConfig(Config):
                 is_feature=True,
                 is_buybonus=False,
                 distributions=[
-                    Distribution(
-                        criteria="wincap",
-                        quota=0.001,
-                        win_criteria=self.wincap,
-                        conditions={
-                            "reel_weights": {
-                                self.basegame_type: {"BR0": 1},
-                                self.freegame_type: {"FR0": 1},
-                            },
-                            "scatter_triggers": {3: 100, 4: 20, 5: 5},
-                            "force_wincap": True,
-                            "force_freegame": True,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
-                        },
-                    ),
-                    Distribution(
-                        criteria="freegame",
-                        quota=0.1,
-                        conditions={
-                            "reel_weights": {
-                                self.basegame_type: {"BR0": 1},
-                                self.freegame_type: {"FR0": 1},
-                            },
-                            "scatter_triggers": {3: 100, 4: 20, 5: 5},
-                            "force_wincap": False,
-                            "force_freegame": True,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
-                        },
-                    ),
-                    Distribution(
-                        criteria="0",
-                        quota=0.4,
-                        win_criteria=0.0,
-                        conditions={
-                            "reel_weights": {self.basegame_type: {"BR0": 1}},
-                            "force_wincap": False,
-                            "force_freegame": False,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
-                        },
-                    ),
+                    # TEMPORARY for testing with placeholders (only achievable criteria, no infinite repeats)
                     Distribution(
                         criteria="basegame",
-                        quota=0.5,
+                        quota=1.0,
                         conditions={
                             "reel_weights": {self.basegame_type: {"BR0": 1}},
                             "force_wincap": False,
