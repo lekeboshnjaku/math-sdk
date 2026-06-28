@@ -69,14 +69,23 @@ class GameConfig(Config):
         }
         self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
 
-        # Load reels manually (more reliable)
+        # Load reels manually (more reliable) — must produce the same shape as read_reels_csv:
+        # list of num_reels lists (one per reel), each containing the stop symbols for that reel.
         reel_files = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
         self.reels = {}
         for name, filename in reel_files.items():
             path = os.path.join(self.reels_path, filename)
             with open(path, "r", encoding="utf-8") as f:
-                symbols = [line.strip() for line in f if line.strip()]
-            self.reels[name] = symbols
+                lines = [line.strip() for line in f if line.strip()]
+            # Transpose columns (this CSV format has rows=stops, columns=reels) into per-reel strips
+            reelstrips = [[] for _ in range(self.num_reels)]
+            for line in lines:
+                cols = line.split(",")
+                for reel_idx, raw in enumerate(cols):
+                    cleaned = "".join(ch for ch in raw if ch.strip().isalnum())
+                    if cleaned:
+                        reelstrips[reel_idx].append(cleaned)
+            self.reels[name] = reelstrips
 
         self.bet_modes = [
             BetMode(
