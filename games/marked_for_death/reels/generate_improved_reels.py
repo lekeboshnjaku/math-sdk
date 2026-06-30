@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""
+generate_improved_reels.py
+
+Option A implementation for Marked for Death reel improvement (Option 1).
+
+Generates longer, weighted BR0.csv and FR0.csv with:
+- 300 stops per reel
+- Increased S frequency for natural FS hit rate of ~5-8% (P(>=3S) on 20 positions)
+- Varied per reel
+- Good mix for marked promotion
+- Deterministic via seeds
+
+These are TESTING REELS (not final production).
+
+Usage:
+  python reels/generate_improved_reels.py
+  (overwrites BR0.csv and FR0.csv in this dir with new content)
+
+Symbols kept: H1-H4, L1-L5, W, S  (exact match to game_config paytable + specials)
+"""
+
+import random
+import os
+from collections import Counter
+
+LENGTH = 300
+SYMBOLS = ["H1", "H2", "H3", "H4", "L1", "L2", "L3", "L4", "L5", "W", "S"]
+
+def make_counts_balanced(reel_idx: int, is_base: bool) -> dict:
+    """Return exact counts summing to LENGTH for the reel.
+    Target: natural FS hit rate of ~5-8% (P(>=3S) on 20 positions).
+    Base: ~3.9% S avg.
+    FS: ~6.3% S (for some natural retriggers).
+    Slight per-reel variation. L/H plenty for marked promotion.
+    """
+    if is_base:
+        # Base: ~3.9% S => ~5-7% natural FS rate (before cascades/marked)
+        # ~7-8% W, H total ~24-26%, L fill rest.
+        base_s = [12, 13, 12, 13, 13][reel_idx]  # ~4.2% for ~5.5-7% P(>=3S)
+        base_w = [22, 21, 23, 20, 22][reel_idx]
+        base_h1 = [12, 11, 12, 11, 11][reel_idx]
+        base_h2 = [15, 16, 15, 16, 15][reel_idx]
+        base_h3 = [19, 18, 19, 18, 19][reel_idx]
+        base_h4 = [23, 22, 23, 22, 23][reel_idx]
+        base_l1 = [32, 33, 32, 33, 32][reel_idx]
+        base_l2 = [37, 36, 37, 36, 37][reel_idx]
+        base_l3 = [40, 41, 40, 41, 40][reel_idx]
+        base_l4 = [44, 45, 44, 45, 44][reel_idx]
+        base_l5 = [49, 48, 49, 48, 48][reel_idx]
+        counts = {
+            "S": base_s, "W": base_w,
+            "H1": base_h1, "H2": base_h2, "H3": base_h3, "H4": base_h4,
+            "L1": base_l1, "L2": base_l2, "L3": base_l3, "L4": base_l4, "L5": base_l5,
+        }
+    else:
+        # Free Spins: ~6.3% S for some natural retriggers
+        fs_s = [18, 19, 20, 19, 18][reel_idx]
+        fs_w = [26, 27, 25, 28, 27][reel_idx]
+        fs_h1 = [14, 13, 14, 13, 14][reel_idx]
+        fs_h2 = [19, 18, 19, 18, 19][reel_idx]
+        fs_h3 = [22, 23, 22, 23, 22][reel_idx]
+        fs_h4 = [26, 25, 26, 25, 26][reel_idx]
+        fs_l1 = [28, 29, 28, 29, 28][reel_idx]
+        fs_l2 = [32, 31, 32, 31, 32][reel_idx]
+        fs_l3 = [34, 35, 34, 35, 34][reel_idx]
+        fs_l4 = [37, 38, 37, 38, 37][reel_idx]
+        fs_l5 = [45, 44, 45, 44, 45][reel_idx]
+        counts = {
+            "S": fs_s, "W": fs_w,
+            "H1": fs_h1, "H2": fs_h2, "H3": fs_h3, "H4": fs_h4,
+            "L1": fs_l1, "L2": fs_l2, "L3": fs_l3, "L4": fs_l4, "L5": fs_l5,
+        }
+
+    # Enforce sum == LENGTH (fix rounding drift)
+    s = sum(counts.values())
+    if s != LENGTH:
+        # Adjust most common low symbol
+        diff = LENGTH - s
+        counts["L5"] += diff
+    assert sum(counts.values()) == LENGTH, f"Counts must sum to {LENGTH}"
+    return counts
+
+
+def generate_strip(counts: dict, seed: int) -> list[str]:
+    """Build a strip list of exact length by creating pool + shuffle + light declump."""
+    pool = []
+    for sym, cnt in counts.items():
+        pool.extend([sym] * cnt)
+    assert len(pool) == LENGTH
+
+    rng = random.Random(seed)
+    rng.shuffle(pool)
+
+    # Light declump pass: break runs of 4+ identical (esp for S/W/H)
+    for _ in range(2):  # 2 passes
+        i = 0
+        while i < len(pool) - 3:
+            if pool[i] == pool[i+1] == pool[i+2] == pool[i+3]:
+                # swap the 4th with something different later
+                for j in range(i+4, min(i+12, len(pool))):
+                    if pool[j] != pool[i]:
+                        pool[i+3], pool[j] = pool[j], pool[i+3]
+                        break
+            i += 1
+    return pool
+
+
+def write_csv(reel_strips: list[list[str]], out_path: str, name: str):
+    """Write the 5-column transposed CSV (standard SDK format)."""
+    num_stops = len(reel_strips[0])
+    lines = []
+    for pos in range(num_stops):
+        row = ",".join(reel_strips[r][pos] for r in range(5))
+        lines.append(row)
+    with open(out_path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"Wrote {name} -> {out_path} ({num_stops} stops x 5 reels)")
+
+
+def analyze_strip(reel_strips: list[list[str]], label: str):
+    print(f"\n=== {label} (improved) ===")
+    print(f"Stops per reel: {[len(r) for r in reel_strips]}")
+    total_s = 0
+    for i, reel in enumerate(reel_strips):
+        cnt = Counter(reel)
+        tot = len(reel)
+        s = cnt.get("S", 0)
+        total_s += s
+        pct_s = s / tot * 100
+        print(f"  Reel {i}: S={s} ({pct_s:.1f}%)  W={cnt.get('W',0)}  "
+              f"H1={cnt.get('H1',0)} H2={cnt.get('H2',0)} H3={cnt.get('H3',0)} H4={cnt.get('H4',0)}")
+    print(f"Total S across reels: {total_s} (avg per reel {total_s/5:.1f})")
+    # Quick expected trigger estimate
+    p = (total_s / 5) / LENGTH
+    # approx using binomial for 20 positions
+    from math import comb
+    def p_ge3(n=20, pp=p):
+        return sum(comb(n,k) * (pp**k) * ((1-pp)**(n-k)) for k in range(3, n+1))
+    print(f"Approx base draw P(>=3S) ~ {p_ge3()*100:.1f}% (every ~{1/p_ge3():.0f} spins)  [p_sym={p*100:.2f}%]")
+
+
+def main():
+    print("Marked for Death - Improved Reel Generator (for testing)")
+    print("=" * 60)
+    print("NOTE: These reels are for more realistic testing (Option 1).")
+    print("      NOT production final. Tune further after mechanics + sims.\n")
+
+    reels_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Generate BR0
+    br_strips = []
+    for r in range(5):
+        counts = make_counts_balanced(r, is_base=True)
+        strip = generate_strip(counts, seed=42 + r * 1000)
+        br_strips.append(strip)
+    write_csv(br_strips, os.path.join(reels_dir, "BR0.csv"), "BR0.csv")
+    analyze_strip(br_strips, "BR0 (base)")
+
+    # Generate FR0
+    fr_strips = []
+    for r in range(5):
+        counts = make_counts_balanced(r, is_base=False)
+        strip = generate_strip(counts, seed=123 + r * 1000)
+        fr_strips.append(strip)
+    write_csv(fr_strips, os.path.join(reels_dir, "FR0.csv"), "FR0.csv")
+    analyze_strip(fr_strips, "FR0 (freespin)")
+
+    print("\nDone. Reels updated for better FS frequency and variety.")
+    print("Next: verify in game_config, then run sims/books for hit rate / FS freq.")
+    print("Remember to commit the generator script + new reels.")
+
+
+if __name__ == "__main__":
+    main()
