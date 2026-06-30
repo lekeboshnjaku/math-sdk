@@ -8,6 +8,7 @@ from utils.game_analytics.run_analysis import create_stat_sheet
 from utils.rgs_verification import execute_all_tests
 from src.state.run_sims import create_books
 from src.write_data.write_configs import generate_configs
+from uploads.aws_upload import upload_to_aws
 
 if __name__ == "__main__":
 
@@ -53,7 +54,7 @@ if __name__ == "__main__":
 
     if run_conditions["run_analysis"]:
         custom_keys = [{"symbol": "scatter"}]
-        run(config.game_id, custom_keys=custom_keys)
+        create_stat_sheet(config.game_id, custom_keys=custom_keys)
 
     if run_conditions["upload_data"]:
         upload_items = {

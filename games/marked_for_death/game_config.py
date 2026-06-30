@@ -1,16 +1,18 @@
-"""Marked for Death game configuration (based on v0.5 Math Design Document)."""
+"""Template game configuration file, detailing required user-specified inputs."""
 
-import os
 from src.config.config import Config
 from src.config.distributions import Distribution
 from src.config.config import BetMode
 
 
 class GameConfig(Config):
-    """Marked for Death configuration class."""
+    """Template configuration class."""
 
     def __init__(self):
         super().__init__()
+        # Priority 1 foundational settings per IMPLEMENTATION_MAPPING_v1.2.md
+        # (sections 2, 5.1, 7): metadata, grid, paytable, special_symbols (incl. "marked"),
+        # FS triggers. These are the minimal basics before building cascade logic.
         self.game_id = "marked_for_death"
         self.provider_number = 0
         self.working_name = "Marked for Death"
@@ -19,60 +21,72 @@ class GameConfig(Config):
         self.rtp = 0.9673
         self.construct_paths(self.game_id)
 
-        # Force reels_path to always be next to this file.
-        self.reels_path = os.path.join(os.path.dirname(__file__), "reels")
-
         # Game Dimensions
         self.num_reels = 5
-        self.num_rows = [4] * self.num_reels
-
+        self.num_rows = [4] * self.num_reels  # 5 reels × 4 rows per MDD / mapping section 2
         # Board and Symbol Properties
         self.paytable = {
-            (5, "H1"): 500,
-            (4, "H1"): 100,
-            (3, "H1"): 20,
-            (5, "H2"): 300,
-            (4, "H2"): 80,
-            (3, "H2"): 15,
-            (5, "H3"): 200,
-            (4, "H3"): 50,
-            (3, "H3"): 12,
-            (5, "H4"): 150,
-            (4, "H4"): 40,
-            (3, "H4"): 10,
-            (5, "L1"): 80,
-            (4, "L1"): 20,
-            (3, "L1"): 5,
-            (5, "L2"): 60,
-            (4, "L2"): 15,
-            (3, "L2"): 4,
-            (5, "L3"): 50,
-            (4, "L3"): 12,
-            (5, "L4"): 10,
-            (3, "L4"): 3,
-            (5, "L5"): 30,
-            (4, "L5"): 8,
-            (3, "L5"): 2,
-        }
+            (5, "H1"): 500, (4, "H1"): 100, (3, "H1"): 20,
+            (5, "H2"): 300, (4, "H2"): 80, (3, "H2"): 15,
+            (5, "H3"): 200, (4, "H3"): 50, (3, "H3"): 12,
+            (5, "H4"): 150, (4, "H4"): 40, (3, "H4"): 10,
+            (5, "L1"): 80, (4, "L1"): 20, (3, "L1"): 5,
+            (5, "L2"): 60, (4, "L2"): 15, (3, "L2"): 4,
+            (5, "L3"): 50, (4, "L3"): 12, (3, "L3"): 3,
+            (5, "L4"): 40, (4, "L4"): 10, (3, "L4"): 3,
+            (5, "L5"): 30, (4, "L5"): 8, (3, "L5"): 2,
+        }  # Exact from mapping section 2 (MDD paytable)
 
         self.include_padding = True
-        self.special_symbols = {"wild": ["W"], "scatter": ["S"], "multiplier": [], "marked": []}
+        self.special_symbols = {"wild": ["W"], "scatter": ["S"], "multiplier": [], "marked": []}  # Added "marked" per mapping 5.1/5.4 for event emission and attribute tracking
+
+        # Marked promotion probabilities (tuned 2026-06-30; reel3_count restored to design value 1).
+        # Current: fs initial 0.03, drop 0.0002 (aggressively lowered to shorten rounds).
+        # base: initial 0.06, drop 0.015.
+        #
+        # base: applied to reels 2-4 on initial landing and after each tumble (drops).
+        # fs:   higher base chance, but drop kept very low.
+        # force_reel3_marked() uses count=1 (restored after temp test with 0).
+        self.marked_prob = {
+            "base": {"initial": 0.06, "drop": 0.015},     # Base unchanged for now
+            "fs":   {"initial": 0.01, "drop": 0.00005}    # Further lowered for uncapped stability test
+        }
+
+        self.fs_reel3_marked_count = 1  # Restored to design value after temporary testing with 0 (for shorter rounds)
 
         self.freespin_triggers = {
-            self.basegame_type: {},
-            self.freegame_type: {},
+            self.basegame_type: {3: 12, 4: 14, 5: 16, 6: 18, 7: 20, 8: 22, 9: 24, 10: 26},
+            self.freegame_type: {3: 12, 4: 14, 5: 16, 6: 18, 7: 20, 8: 22, 9: 24, 10: 26}
         }
-        for n in range(3, 21):
-            val = 12 + (n - 3) * 2
-            self.freespin_triggers[self.basegame_type][n] = val
-            self.freespin_triggers[self.freegame_type][n] = val
-        self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
+        # Extend for high scatter counts (possible in long cascades / many S landing, since S usually don't get removed).
+        # Use +2 per additional scatter. Prevents KeyError on retrigger with 11+ scatters.
+        for gtype in (self.basegame_type, self.freegame_type):
+            trig = self.freespin_triggers[gtype]
+            max_s = max(trig.keys())
+            base = trig[max_s]
+            for s in range(max_s + 1, 21):
+                trig[s] = base + (s - max_s) * 2
+        self.anticipation_triggers = {
+            self.basegame_type: 2,
+            self.freegame_type: 1
+        }  # Priority 1 foundational per IMPLEMENTATION_MAPPING_v1.2.md section 5.1
 
-        # Use the original read_reels_csv (the SDK expects this format)
+        # Reels (IMPROVED TESTING REELS - see Option 1 / generate script)
+        # ----------------------------------------------------------------
+        # Updated 2026-06-30 as first step for realistic testing.
+        # - Length: 300 stops/reel (up from 150-stub)
+        # - S frequency tuned: BR ~2.5% (natural ~1/80 FS rate), FR ~5% (retrigger friendly)
+        # - Varied per reel (not clones). Good L/H density for marked_prob to matter.
+        # - FRWCAP.csv exists in reels/ but is NOT integrated here yet (has H5 + needs review).
+        #   When ready: add "FRWCAP": "FRWCAP.csv" + use in wincap/free dists like 0_0_ways example.
+        # These are explicitly **for testing** (not production final reels).
+        # Production reels will come from optimization after full cascade+marked+mult impl.
+        # Generator: reels/generate_improved_reels.py (re-runnable, seeded)
+        # See also README.md in this folder for full reel summary + symbol counts.
         reels = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
         self.reels = {}
         for r, f in reels.items():
-            self.reels[r] = self.read_reels_csv(os.path.join(self.reels_path, f))
+            self.reels[r] = self.read_reels_csv(str.join("/", [self.reels_path, f]))
 
         self.bet_modes = [
             BetMode(
@@ -93,13 +107,9 @@ class GameConfig(Config):
                                 self.basegame_type: {"BR0": 1},
                                 self.freegame_type: {"FR0": 1},
                             },
-                            "scatter_triggers": {3: 100, 4: 20, 5: 5},
+                            "scatter_triggers": {},
                             "force_wincap": True,
                             "force_freegame": True,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
                         },
                     ),
                     Distribution(
@@ -110,13 +120,9 @@ class GameConfig(Config):
                                 self.basegame_type: {"BR0": 1},
                                 self.freegame_type: {"FR0": 1},
                             },
-                            "scatter_triggers": {3: 100, 4: 20, 5: 5},
+                            "scatter_triggers": {},
                             "force_wincap": False,
                             "force_freegame": True,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
                         },
                     ),
                     Distribution(
@@ -127,10 +133,6 @@ class GameConfig(Config):
                             "reel_weights": {self.basegame_type: {"BR0": 1}},
                             "force_wincap": False,
                             "force_freegame": False,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
                         },
                     ),
                     Distribution(
@@ -140,10 +142,6 @@ class GameConfig(Config):
                             "reel_weights": {self.basegame_type: {"BR0": 1}},
                             "force_wincap": False,
                             "force_freegame": False,
-                            "mult_values": {
-                                self.basegame_type: [1],
-                                self.freegame_type: [1],
-                            },
                         },
                     ),
                 ],

@@ -1,5 +1,4 @@
 from game_executables import GameExecutables
-from src.calculations.statistics import get_random_outcome
 
 
 class GameStateOverride(GameExecutables):
@@ -13,14 +12,15 @@ class GameStateOverride(GameExecutables):
         super().reset_book()
 
     def assign_special_sym_function(self):
-        # No per-symbol multipliers for this game (global mult is used instead)
+        # This game uses a *global* persistent multiplier (x1 base / starts at x2 in FS,
+        # +1 after each paid cascade, carries across FS spins). See gamestate.py run_freespin
+        # and update_global_mult().
+        #
+        # There are no per-symbol multipliers (no "M" symbols, and wild "W" should not
+        # receive random multipliers). The old template registration for "M"/"W" caused:
+        #   KeyError: 'mult_values'   (because no Distribution.conditions had it)
+        # when create_symbol("W") was called from reel strips during draw_board.
         self.special_symbol_functions = {}
-
-    def assign_mult_property(self, symbol):
-        multiplier_value = get_random_outcome(
-            self.get_current_distribution_conditions()["mult_values"][self.gametype]
-        )
-        symbol.multiplier = multiplier_value
 
     def check_game_repeat(self):
         if self.repeat == False:

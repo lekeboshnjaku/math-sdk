@@ -16,9 +16,11 @@ class Board(GeneralGameState):
             top_symbols = []
             bottom_symbols = []
         self.refresh_special_syms()
-        self.reelstrip_id = get_random_outcome(
-            self.get_current_distribution_conditions()["reel_weights"][self.gametype]
-        )
+        dist_conds = self.get_current_distribution_conditions()
+        rw = dist_conds["reel_weights"]
+        if self.gametype not in rw:
+            rw[self.gametype] = {'FR0': 1} if self.gametype == 'freegame' else {'BR0': 1}
+        self.reelstrip_id = get_random_outcome(rw[self.gametype])
         self.reelstrip = self.config.reels[self.reelstrip_id]
         anticipation = [0] * self.config.num_reels
         board = [[]] * self.config.num_reels

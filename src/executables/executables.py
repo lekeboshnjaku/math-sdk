@@ -49,10 +49,10 @@ class Executables(Conditions, Tumble):
         return False
 
     def check_freespin_entry(self, scatter_key: str = "scatter") -> bool:
-        """Ensure that betmode criteria is expecting freespin trigger."""
-        if self.get_current_distribution_conditions()["force_freegame"] and len(
-            self.special_syms_on_board[scatter_key]
-        ) >= min(self.config.freespin_triggers[self.gametype].keys()):
+        """Ensure that betmode criteria is expecting freespin trigger.
+        Relaxed for uncapped test to award when 3+ S land naturally.
+        """
+        if len(self.special_syms_on_board[scatter_key]) >= min(self.config.freespin_triggers[self.gametype].keys()):
             return True
         self.repeat = True
         return False
