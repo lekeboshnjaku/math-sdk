@@ -108,13 +108,41 @@ def find_book_files(count: int = 5) -> List[Path]:
     return unique[: max(count, 1)]
 
 
-def _load_jsonl_lines(text_stream) -> List[Dict[str, Any]]:
-    books = []
+def _iter_jsonl_lines(text_stream):
     for line in text_stream:
         line = line.strip()
         if line:
-            books.append(json.loads(line))
-    return books
+            yield json.loads(line)
+
+
+def _load_jsonl_lines(text_stream) -> List[Dict[str, Any]]:
+    return list(_iter_jsonl_lines(text_stream))
+
+
+def iter_books(path: Path):
+    """Yield books one at a time (memory-safe for large .jsonl / .zst files)."""
+    p = str(path).lower()
+
+    if p.endswith(".zst") or ".zst" in p:
+        if zstd is None:
+            raise RuntimeError(
+                "zstandard is required to read compressed books. "
+                "Install with: pip install zstandard"
+            )
+        dctx = zstd.ZstdDecompressor()
+        with open(path, "rb") as f:
+            with dctx.stream_reader(f) as reader:
+                text = io.TextIOWrapper(reader, encoding="utf-8")
+                yield from _iter_jsonl_lines(text)
+        return
+
+    if p.endswith(".jsonl"):
+        with open(path, "r", encoding="utf-8") as f:
+            yield from _iter_jsonl_lines(f)
+        return
+
+    for book in load_books(path):
+        yield book
 
 
 def load_books(path: Path) -> List[Dict[str, Any]]:
@@ -473,40 +501,45 @@ def main(argv: Optional[List[str]] = None) -> int:
     mode = "detailed" if args.detailed else "summary"
     print(f"Mode: {mode}")
 
-    # Collect everything first (for summary-first output)
-    all_analyses: List[Dict[str, Any]] = []
+    problem_analyses: List[tuple] = []
+    interesting_clean: List[tuple] = []
+    max_interesting_display = 50
 
     auto_latest = not args.book_path and not args.latest and args.count is None
 
     for f in files:
+        spin_idx = 0
+        file_spins = 0
         try:
-            books = load_books(f)
             prefix = "Auto-selected latest: " if (auto_latest and len(files) == 1) else ""
-            print(f"  - {prefix}{f} ({len(books)} spins)")
+            print(f"  - {prefix}{f} (streaming...)")
+            for book in iter_books(f):
+                spin_idx += 1
+                file_spins += 1
+                analysis = analyze_book(book)
+                total_spins += 1
+                if analysis.get("involves_fs"):
+                    fs_involved += 1
+                else:
+                    base_only += 1
+
+                mults = analysis.get("mult_progression") or []
+                total_mult_updates += len(mults)
+                total_conv_ok += analysis.get("conversion_ok", 0)
+                total_conv_checks += analysis.get("conversion_checks", 0)
+
+                if analysis.get("issues"):
+                    total_issues_count += 1
+                    problem_analyses.append((spin_idx, analysis))
+                elif args.detailed:
+                    print_book_report(analysis, spin_idx)
+                elif analysis.get("mult_progression") and len(interesting_clean) < max_interesting_display:
+                    interesting_clean.append((spin_idx, analysis))
+
+            print(f"    loaded {file_spins} spins")
         except Exception as exc:
             print(f"\n[ERROR] Failed to load {f}: {exc}")
             continue
-
-        for book in books:
-            analysis = analyze_book(book)
-            all_analyses.append(analysis)
-
-    # Compute aggregates
-    for a in all_analyses:
-        total_spins += 1
-        if a.get("involves_fs"):
-            fs_involved += 1
-        else:
-            base_only += 1
-
-        mults = a.get("mult_progression") or []
-        total_mult_updates += len(mults)
-
-        total_conv_ok += a.get("conversion_ok", 0)
-        total_conv_checks += a.get("conversion_checks", 0)
-
-        if a.get("issues"):
-            total_issues_count += 1
 
     # Always print overall summary first
     print_overall_summary(
@@ -523,30 +556,24 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Now print per-spin info
     print("\n--- Per-spin results ---")
 
-    problem_analyses = [(i+1, a) for i, a in enumerate(all_analyses) if a.get("issues")]
-    clean_analyses = [(i+1, a) for i, a in enumerate(all_analyses) if not a.get("issues")]
-
     if args.detailed:
-        # Full verbose for all
-        for idx, a in enumerate(all_analyses, 1):
-            print_book_report(a, idx)
+        issues_only = [(idx, a) for idx, a in problem_analyses if a.get("issues")]
+        if issues_only:
+            print(f"\nProblems ({len(issues_only)} spins):")
+            for idx, a in issues_only:
+                print_book_report(a, idx)
     else:
-        # Summary mode: full details ONLY for problems
-        if problem_analyses:
-            print(f"\nProblems ({len(problem_analyses)} spins):")
-            for idx, a in problem_analyses:
+        issues_only = [(idx, a) for idx, a in problem_analyses if a.get("issues")]
+        if issues_only:
+            print(f"\nProblems ({len(issues_only)} spins):")
+            for idx, a in issues_only:
                 print_book_report(a, idx)
         else:
             print("(no spins with issues)")
 
-        # For clean spins: show one-liners only for "interesting" ones (had cascades/mult)
-        # + count the rest. This keeps output short for 50+ spins.
-        interesting_clean = [(idx, a) for idx, a in clean_analyses
-                             if a.get("mult_progression")]
-        plain_clean_count = len(clean_analyses) - len(interesting_clean)
-
+        plain_clean_count = total_spins - len(issues_only) - len(interesting_clean)
         if interesting_clean:
-            print(f"\nClean spins with activity ({len(interesting_clean)}):")
+            print(f"\nClean spins with activity (showing up to {max_interesting_display}):")
             for idx, a in interesting_clean:
                 print_compact_spin(a, idx)
 
