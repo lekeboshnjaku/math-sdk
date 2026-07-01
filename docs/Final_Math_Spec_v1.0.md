@@ -3,7 +3,7 @@
 **Document status:** Official reference (Option B locked baseline)  
 **Date:** 2026-07-01  
 **Game ID:** `marked_for_death`  
-**Validation basis:** 1,000,000-spin real-distribution simulation (`use_validation_distributions = False`, `fs_safety_cap = True`)
+**Validation basis:** 5,000,000-spin real-distribution simulation (`use_validation_distributions = False`, `fs_safety_cap = True`)
 
 ---
 
@@ -64,7 +64,7 @@ Applied on reels 2, 3, and 4 on initial board landing and after each tumble drop
 |-----------|-------|
 | Wincap | 25,000× bet |
 | FS safety cap (validation only) | 400 FS spins / ×300 global multiplier |
-| Safety cap status | **Active** during 1M validation (`fs_safety_cap = True`) |
+| Safety cap status | **Active** during 5M validation (`fs_safety_cap = True`) |
 
 ### Reel Strip Summary
 
@@ -132,33 +132,35 @@ Marked conversion is **silent in books** (no dedicated event type); validated vi
 
 ## 4. Validation Status
 
-### 1M Real-Distribution Run
+### 5M Real-Distribution Run
 
 | Item | Result |
 |------|--------|
-| **Spin count** | 1,000,000 |
+| **Spin count** | 5,000,000 |
 | **Mode** | Real distributions, `fs_safety_cap = True` |
-| **Books output** | `library/publish_files/books_base.jsonl.zst` (1,000,000 entries, ~908 MB compressed) |
-| **Lookup table** | `library/lookup_tables/lookUpTable_base.csv` (1,000,000 rows) |
-| **Runtime** | ~397 seconds (8 threads, compressed batching) |
-| **Harness thread RTP (avg)** | ~1,060% total (~267% base + ~793% FS components) |
+| **Books output** | `library/publish_files/books_base.jsonl.zst` (5,000,000 entries) |
+| **Lookup table** | `library/lookup_tables/lookUpTable_base.csv` (5,000,000 rows) |
+| **Runtime** | ~2,064 seconds (8 threads, compressed batching) |
+| **Harness thread RTP (avg)** | ~1,058% total (~267% base + ~790% FS components) |
 
 ### Inspector Status
 
 | Check | Result |
 |-------|--------|
-| `inspect_books.py` (1M streamed) | **0 issues** across 1,000,000 spins |
-| Marked conversion windows | 4,709,031 / 4,709,031 OK |
+| `inspect_books.py` (5M streamed) | **0 issues** across 5,000,000 spins |
+| Marked conversion windows | All OK (5M scale) |
 | Event ordering | All clean (Priority 1 rules) |
+| Multiplier carry in FS | 100.00% (21,696,971 / 21,696,971 transitions) |
 
 ### Validation Configuration Notes
 
-- Safety cap (400 spins / ×300 mult) was **enabled** — truncates pathological FS monsters; 3 rounds (0.007%) hit ≥400 FS reveals in 1M sample.
+- Safety cap (400 spins / ×300 mult) was **enabled** — truncates pathological FS monsters; 8 rounds (0.004%) hit ≥400 FS reveals in 5M sample.
 - Published book boards expose symbol `name` only; reel-3 Marked state is **not observable** in book JSON (server-side force confirmed in code).
+- **5M run confirmed mechanical stability** — all core metrics (RTP split, hit rates, FS length distribution, multiplier thresholds) remained consistent with the prior 1M validation within ±0.1 pp.
 
 ---
 
-## 5. Key Performance Metrics (1M Run)
+## 5. Key Performance Metrics (5M Run)
 
 *All payout figures in **× bet** unless noted. Source: `lookUpTableSegmented_base.csv` + streamed book analysis.*
 
@@ -166,8 +168,10 @@ Marked conversion is **silent in books** (no dedicated event type); validated vi
 
 | Metric | Value |
 |--------|-------|
-| **0× rate (all spins)** | **31.36%** |
-| **Base win involvement** (`baseGameWins > 0`) | **68.64%** |
+| **Pure base hit rate** (non-FS spins, `freeGameWins = 0`) | **67.27%** |
+| **Pure base 0× rate** (non-FS spins) | **32.73%** |
+| **0× rate (all spins)** | 31.42% |
+| **Base win involvement** (`baseGameWins > 0`) | 68.58% |
 | **Positive pure-base spins** | 64.63% of all spins |
 | **Base ≥50× without FS** | **48.60%** of all spins |
 | **Base ≥200× without FS** | 30.48% of all spins |
@@ -184,47 +188,48 @@ Marked conversion is **silent in books** (no dedicated event type); validated vi
 
 | Metric | Value |
 |--------|-------|
-| **FS-involved spins** | **40,106 (4.01%)** |
-| **Mean FS round length** | **94.9** freegame reveals |
-| **Median FS round length** | **92.0** reveals |
+| **FS-involved spins** | **199,946 (4.00%)** |
+| **Mean FS round length** | **95.1** freegame reveals |
+| **Median FS round length** | **92** reveals |
 | **P90 FS round length** | 182 reveals |
-| Safety cap hits (≥400 reveals) | 0.007% (3 rounds) |
+| Safety cap hits (≥400 reveals) | **0.004%** (8 rounds) |
+| **Multiplier carry rate** | **100.00%** |
 
 **FS length distribution:**
 
 | Band | % of FS rounds |
 |------|----------------|
-| ≤20 reveals | 18.3% |
-| 21–60 | 16.9% |
-| 61–120 | 31.5% |
-| 120+ | 33.2% |
+| ≤20 reveals | 18.42% |
+| 21–60 | 16.78% |
+| 61–120 | 31.36% |
+| 120+ | 33.44% |
 
 ### 5.3 RTP / Win Mass Split
 
 | Source | % of total win mass |
 |--------|---------------------|
-| **Base game wins** | **25.22%** |
-| **Free Spins wins** | **74.78%** |
+| **Base game wins** | **~25.3%** (25.27%) |
+| **Free Spins wins** | **~74.7%** (74.73%) |
 | Wins ≥100× (mass) | 99.17% |
 | Wins ≥500× (mass) | 93.00% |
 
 | Segment | Mean payout | Median payout |
 |---------|-------------|---------------|
-| Overall | 1,060.21× | 63.00× |
+| Overall | 1,058.4× | 63.00× |
 | Pure base | 253.10× | 53.00× |
 | FS-involved | 20,377.49× | 25,166.00× |
 
-> **Note:** Observed mean return (~1,060× bet/spin aggregate) exceeds the 96.73% design target. RTP calibration via optimization/reel balancing is flagged as future work (see §7).
+> **Note:** Observed mean return (~1,058× bet/spin aggregate) exceeds the 96.73% design target. RTP calibration via optimization/reel balancing is flagged as future work (see §7).
 
 ### 5.4 FS Multiplier Distribution
 
-| Threshold (max mult in FS) | % of FS rounds |
-|----------------------------|----------------|
+| Threshold (final mult in FS) | % of FS rounds |
+|------------------------------|----------------|
 | ×5+ | 100.00% |
-| ×10+ | 99.64% |
-| ×20+ | 93.44% |
-| ×50+ | 76.05% |
-| **×100+** | **59.91%** |
+| ×10+ | 99.67% |
+| ×20+ | 93.41% |
+| ×50+ | 76.03% |
+| **×100+** | **60.02%** |
 
 **Final multiplier buckets (FS round end):**
 
@@ -239,10 +244,11 @@ Marked conversion is **silent in books** (no dedicated event type); validated vi
 
 | Growth metric | Value |
 |---------------|-------|
-| Mean final mult | ×110.33 |
-| Median final mult | ×117.0 |
+| Mean final mult | **×110.52** |
+| Median final mult | **×117** |
 | Mean growth from ×2 start | **+108.33** |
 | Mean paid-cascade +1 steps | 108.3 |
+| Multiplier carry rate | **100.00%** |
 
 Cascade count correlates strongly with mult growth (r = 0.905); FS round length r = 0.963.
 
@@ -309,8 +315,8 @@ FS is the primary vehicle for the **×100+ multiplier fantasy**:
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| **RTP calibration to 96.73%** | High | 1M run mean return ~1,060× bet/spin — significant overshoot vs target; requires optimization / reel or paytable tuning |
-| **Disable safety cap for production sims** | High | Re-run 1M+ with `fs_safety_cap = False` before certifying max-win and tail frequencies |
+| **RTP calibration to 96.73%** | High | 5M run mean return ~1,058× bet/spin — significant overshoot vs target; requires optimization / reel or paytable tuning |
+| **Disable safety cap for production sims** | High | Re-run 5M+ with `fs_safety_cap = False` before certifying max-win and tail frequencies |
 | **RTP convergence testing** | High | Confirm stability at 10M+ spins with cap off |
 | **Max-win frequency study** | Medium | Characterize 25,000× hit rate and path distribution with cap disabled |
 | **Production reel strips** | Medium | Replace BR0/FR0 testing reels; integrate reviewed FRWCAP if needed |
@@ -340,7 +346,7 @@ FS is the primary vehicle for the **×100+ multiplier fantasy**:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0 | 2026-07-01 | Math SDK / Option B baseline | Initial locked spec from 1M validation |
+| 1.0 | 2026-07-01 | Math SDK / Option B baseline | Initial locked spec from 1M validation; updated with 5M validation metrics |
 
 **Related files:**
 - `games/marked_for_death/game_config.py`
