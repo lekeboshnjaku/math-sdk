@@ -10,6 +10,14 @@ class GameState(GameStateOverride):
     """
     DEBUG = False  # Set to True only when debugging small runs (emits [DEBUG] prints + full book event dump). Turn off for production 100k runs.
 
+    # Stats collection for 1M validation (aggregated per process)
+    fs_lengths = []
+    fs_final_mults = []
+    fs_max_mults = []
+    base_positive = {"small": 0, "medium": 0, "big": 0}
+    base_zero = 0
+    fs_safety_cap_hits = 0
+
     def run_spin(self, sim, simulation_seed=None):
         """Run a single simulation spin (base game), including possible FS trigger.
 
@@ -107,6 +115,22 @@ class GameState(GameStateOverride):
                 print("[DEBUG] After set_end_tumble_event")  # temporary validation aid for event ordering (per mapping 5.3)
             self.win_manager.update_gametype_wins(self.gametype)
 
+            # Base win quality classification (if no FS triggered for this spin)
+            if not (self.check_fs_condition() and self.check_freespin_entry()):
+                win = self.win_data.get("totalWin", 0)
+                if win == 0:
+                    GameState.base_zero += 1
+                else:
+                    if win < 10000:  # small
+                        GameState.base_positive["small"] += 1
+                    elif win < 100000:  # medium
+                        GameState.base_positive["medium"] += 1
+                    else:
+                        GameState.base_positive["big"] += 1
+                total_base = GameState.base_zero + sum(GameState.base_positive.values())
+                if total_base % 10000 == 0:
+                    print(f"[BASE_WIN_AGG] zero={GameState.base_zero} small={GameState.base_positive['small']} medium={GameState.base_positive['medium']} big={GameState.base_positive['big']}")
+
             # --- Possible FS trigger from this base spin ---
             if self.check_fs_condition() and self.check_freespin_entry():
                 self.run_freespin_from_base()
@@ -187,6 +211,10 @@ class GameState(GameStateOverride):
         self._fs_start_mult_pending = True
         if self.DEBUG:
             self.debug_print_state("FS round start (x2 value set; emit deferred)")  # temporary debug for Priority 1
+
+        # Track for 1M stats
+        round_start_fs = self.fs
+        round_max_mult = self.global_multiplier
 
         # === Temporary FS safety cap (controlled from run.py via fs_safety_cap) ===
         # This guard is active only while fs_safety_cap=True (a development/testing aid).
@@ -332,6 +360,15 @@ class GameState(GameStateOverride):
                     break
 
         # --- End of entire FS round ---
+        fs_length = self.fs - round_start_fs
+        GameState.fs_lengths.append(fs_length)
+        GameState.fs_final_mults.append(self.global_multiplier)
+        GameState.fs_max_mults.append(round_max_mult)
+        if safety_cap_enabled and (self.fs >= MAX_FS_SPINS or self.global_multiplier >= MAX_MULT):
+            GameState.fs_safety_cap_hits += 1
+
+        print(f"[FS_STATS] length={fs_length} final={self.global_multiplier} max={round_max_mult}")
+
         self.end_freespin()
 
         if self.DEBUG:

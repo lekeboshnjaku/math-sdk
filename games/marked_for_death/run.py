@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # Also watch [DEBUG] output from gamestate.py when DEBUG=True.
 
     num_sim_args = {
-        "base": 100000,  # Final 100k-spin Option B baseline validation with real distributions
+        "base": 1000000,  # 1,000,000 spin Option B baseline validation with real distributions
     }
 
     # === Core Temporary Validation Flags ===
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     run_conditions = {
         "run_sims": True,
         "run_optimization": False,
-        "run_analysis": True,  # Attempt stat sheet + books for Option B baseline summary
+        "run_analysis": False,  # Disabled for large 1M run (stat_sheet has known bugs)
         "upload_data": False,
     }
     target_modes = ["base"]
@@ -266,6 +266,10 @@ if __name__ == "__main__":
             profiling,
         )
 
+    print("=== 1M Validation complete. RTP split from thread logs above.")
+    print("FS and base stats from [FS_STATS] and [BASE_WIN_AGG] lines in the log (if present).")
+    print("Use post-processing on books or log for exact buckets.")
+
     generate_configs(gamestate)
 
     if run_conditions["run_optimization"]:
@@ -288,3 +292,42 @@ if __name__ == "__main__":
             target_modes,
             upload_items,
         )
+
+    # Post-run stats parser for 1M (parse [FS_STATS] and [BASE_WIN_AGG] from log)
+    import re
+    try:
+        with open("final_100k.log") as f:
+            log = f.read()
+        fs_lines = re.findall(r"\[FS_STATS\] length=(\d+) final=(\d+) max=(\d+)", log)
+        if fs_lines:
+            lengths = [int(x[0]) for x in fs_lines]
+            finals = [int(x[1]) for x in fs_lines]
+            maxs = [int(x[2]) for x in fs_lines]
+            print(f"\n=== FS Stats from log ===")
+            print(f"FS rounds: {len(lengths)}")
+            print(f"Avg length: {sum(lengths)/len(lengths):.1f}")
+            print(f"Median length: {sorted(lengths)[len(lengths)//2]}")
+            print(f"Max length: {max(lengths)}")
+            cap_hits = sum(1 for l in lengths if l >= 400)
+            print(f"Safety cap (400) hits: {cap_hits} ({cap_hits/len(lengths)*100:.2f}%)")
+            for thresh in [5,10,20,50,100]:
+                reached = sum(1 for m in maxs if m >= thresh)
+                print(f"Reached x{thresh}+ : {reached/len(maxs)*100:.2f}%")
+            # Final buckets
+            buckets = {}
+            for m in finals:
+                b = min([b for b in [2,5,10,20,50,100,1000] if m < b] or [10000])
+                buckets[b] = buckets.get(b,0) + 1
+            print("Final mult buckets:", buckets)
+        base_agg = re.findall(r"\[BASE_WIN_AGG\] zero=(\d+) small=(\d+) medium=(\d+) big=(\d+)", log)
+        if base_agg:
+            last = base_agg[-1]
+            z, s, m, b = map(int, last)
+            total = z + s + m + b
+            print(f"\n=== Base Win Quality ===")
+            print(f"0x: {z/total*100:.2f}%")
+            print(f"Small: {s/total*100:.2f}%")
+            print(f"Medium: {m/total*100:.2f}%")
+            print(f"Big: {b/total*100:.2f}%")
+    except Exception as e:
+        print("Stats parse error:", e)
