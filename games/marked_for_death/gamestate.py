@@ -8,7 +8,7 @@ class GameState(GameStateOverride):
     """Handle all game-logic and event updates for a given simulation number.
     Basic cascade skeleton per Priority 1 of IMPLEMENTATION_MAPPING_v1.2.md (7.3).
     """
-    DEBUG = False  # Temp disabled for Option A uncapped 150-spin run (prevents massive debug logs during long FS). Revert to True after.
+    DEBUG = False  # Set to True only when debugging small runs (emits [DEBUG] prints + full book event dump). Turn off for production 100k runs.
 
     def run_spin(self, sim, simulation_seed=None):
         """Run a single simulation spin (base game), including possible FS trigger.

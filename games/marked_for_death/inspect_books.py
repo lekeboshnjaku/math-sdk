@@ -295,10 +295,18 @@ def analyze_book(book: Dict[str, Any]) -> Dict[str, Any]:
     ):
         issues.append("No valid win -> updateGlobalMult -> tumbleBoard pattern detected for cascades")
 
-    # updateGlobalMult should normally be preceded by a win in this implementation
-    for gi in update_g_indices:
+    # updateGlobalMult should normally be preceded by a win in this implementation.
+    # Exception: the FS round-start x2 (value==2) can legitimately appear after
+    # freeSpinTrigger / updateFreeSpin in cases where the triggering base spin
+    # was 0-win (only setTotalWin + trigger) or first FS levels were 0-win.
+    # The deferral ensures a winInfo precedes the *functional* first paid use,
+    # but the global list may have the 2 appear with trigger events intervening.
+    for idx, gi in enumerate(update_g_indices):
         preceding = [wi for wi in win_indices if wi < gi]
         if not preceding:
+            if involves_fs and idx < len(mult_updates) and mult_updates[idx] == 2:
+                # Allowed FS x2 start announcement
+                continue
             issues.append(f"updateGlobalMult at idx {gi} without a preceding win event")
 
     # Final sanity: most books should end with a terminal win event

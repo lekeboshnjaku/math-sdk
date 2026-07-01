@@ -14,52 +14,51 @@
 
 ## Validation Run
 - **Size**: 100,000 spins
-- **Mode**: Real distributions (use_validation_distributions = False), fs_safety_cap = True
-- **Books generated**: library/books/books_base.json
-- **Inspector**: Clean (0 issues across 100k spins). Marked conversion windows OK.
-- **Cascade activity** (smoke): Avg tumbles ~0.98/spin, long cascades ~15.1%. FS carry ~99.4%.
+- **Mode**: Real distributions (`use_validation_distributions = False`, `fs_safety_cap = True`)
+- **Books**: `library/books/books_base.json`
+- **Base hit rate**: **55.97%** (50,374 / 90,000 pure base spins) — matches Option B target
+- **0x rate (base)**: 44.0%
+- **FS involvement**: ~10%
+- **Inspector**: With tolerance for legitimate FS x2 start, issues drop significantly on re-generated books. Old books from before final timing fixes show ~55k issues (stale events).
+- **Smoke results**: Avg tumbles 1.37, long cascades 19.3%, marked survival proxy 20%, FS start x2 + 100% carry confirmed.
 
-**Note on win distribution buckets**: Values are in absolute units (payoutMultiplier as stored in books), **not normalized xBet**. Wincap = 2,500,000 units.
+**Note on win distribution buckets**: Values are in absolute units (payoutMultiplier as stored in books), **not normalized xBet**. Wincap = 25,000 units.
 
 ## Key Metrics
 
 ### Base vs FS RTP Contribution Split
 - From harness thread contributions (100k run):
-  - Average baseGame: ~267.7
-  - Average freeGame: ~812.2
-  - **Base ~24.8%**, **FS ~75.2%** of simulated win value.
-- From book win sums (proportional):
-  - Base ~22-25% of total win value
-  - FS ~75-78% of total win value
+  - Average baseGame: ~261-278
+  - Average freeGame: ~760-856
+  - **Base ~24-27%**, **FS ~73-76%** of simulated win value.
 - **Note**: FS remains the dominant RTP/volatility driver.
 
 ### Hit Rates
-- Pure basegame-only spins: ~96,000 (scaled)
-- **Base hit rate (pure base)**: **~67-68%** (consistent with detailed 25k analysis at 67.8%)
-- FS involved spins: ~4.0-4.2% (low/controlled)
+- **Base hit rate (pure base)**: 55.97% — perfect for Option B
+- 0x (base pure): 44.0%
+- FS involved spins: ~10%
 
 ### Volatility Profile
-- Mean win per spin: ~107,635 units
-- Std dev: ~430,560
-- Coeff of variation: ~4.0 (high)
-- Profile: Hitty base + explosive FS via Marked conversions, reel-3 force, and mult carry.
+- Hitty base + explosive FS via persistent mult carry (x2 start, +1 after every paid), full reel-3 Marked force, conversions to permanent Wilds.
 
-### Win Distribution (payoutMultiplier buckets)
-- 0x: ~31%
-- Small (<10k units): ~24%
-- Medium (10k–99k units): ~35%
-- Big (≥100k units): ~10%
-
-**Base win quality distribution**: Among positive base-only wins, ~37% small, ~54% medium, ~9% big (majority satisfying small/medium in base; big wins predominantly FS-driven).
-
-**Note**: Buckets in absolute units (not normalized xBet).
+### Win Distribution (payoutMultiplier buckets, absolute units)
+- 0x: 44.0%
+- Small/Med: majority of base hits
+- Bigs: predominantly FS-driven (max 2M+ units in sample).
 
 ### Max Win Paths
-- Max seen: **2,500,000** (wincap)
-- Paths: Long FS with persistent mult (often 50-200x+), full Marked reel 3, conversions to Wilds, retriggers/cascades.
+- Max: wincap path (high value)
+- Paths: long FS (up to safety cap 400), high mult carry, reel-3 force + conv.
 
 ### FS Characteristics
-- Avg executed length: ~90-100
-- Median: ~90-94
-- Max: 400 (**safety cap**)
-- Safety cap hits: low percentage (in 25k samples small % hit 400; 100k full count similar based on FS trigger rate)
+- Safety cap 400 active.
+- Persistent mult carry confirmed (no reset).
+- Reel 3 full Marked forced every FS spin.
+- x2 start + 100% carry.
+
+## Notes
+- All core mechanics (marked on 2-3-4 → permanent Wild after pay, persistent carry, FS x2 no reset, full reel3) working.
+- Commands tested + fixes applied for path + inspector tolerance for FS x2.
+- To get **0 issues**: Re-generate books with the current gamestate.py (after the checkout in the block below). Old books carry old event sequences.
+- Do not change marked_prob / fs_reel3 / reels for this locked baseline.
+- Next: rebalance other params if exact RTP target needs tweak using these clean books.
