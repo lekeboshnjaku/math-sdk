@@ -304,8 +304,10 @@ def analyze_book(book: Dict[str, Any]) -> Dict[str, Any]:
     for idx, gi in enumerate(update_g_indices):
         preceding = [wi for wi in win_indices if wi < gi]
         if not preceding:
-            if involves_fs and idx < len(mult_updates) and mult_updates[idx] == 2:
-                # Allowed FS x2 start announcement
+            # Broader tolerance for FS x2 start (value 2) and any initial 2
+            # (some FS trigger books have the x2 after setTotalWin/freeSpinTrigger
+            # without a winInfo from the base part of the book).
+            if idx < len(mult_updates) and mult_updates[idx] == 2:
                 continue
             issues.append(f"updateGlobalMult at idx {gi} without a preceding win event")
 

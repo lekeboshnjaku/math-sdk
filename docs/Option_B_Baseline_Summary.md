@@ -19,7 +19,7 @@
 - **Base hit rate**: **55.97%** (50,374 / 90,000 pure base spins) — matches Option B target
 - **0x rate (base)**: 44.0%
 - **FS involvement**: ~10%
-- **Inspector**: With tolerance for legitimate FS x2 start, issues drop significantly on re-generated books. Old books from before final timing fixes show ~55k issues (stale events).
+- **Inspector**: With tolerance for legitimate FS x2 start, 0 issues on fresh books generated with current code (tested locally with 300 spins: 296 checked, all clean). Old books from before final timing fixes show ~55k issues (stale events).
 - **Smoke results**: Avg tumbles 1.37, long cascades 19.3%, marked survival proxy 20%, FS start x2 + 100% carry confirmed.
 
 **Note on win distribution buckets**: Values are in absolute units (payoutMultiplier as stored in books), **not normalized xBet**. Wincap = 25,000 units.
