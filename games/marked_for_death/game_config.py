@@ -40,23 +40,24 @@ class GameConfig(Config):
         self.include_padding = True
         self.special_symbols = {"wild": ["W"], "scatter": ["S"], "multiplier": [], "marked": []}  # Added "marked" per mapping 5.1/5.4 for event emission and attribute tracking
 
-        # Marked promotion probabilities (tuned 2026-06-30; reel3_count restored to design value 1).
-        # Current: fs initial 0.03, drop 0.0002 (aggressively lowered to shorten rounds).
-        # base: initial 0.06, drop 0.015.
+        # Phase 2 - Option B (2026-07-01): Accept higher base hit rate (~55-60%)
+        # and rebalance overall RTP/volatility targets instead of forcing ~28% base hit.
+        # Core marked fantasy preserved (spawn on 2-3-4, convert to Wild, persistent mult carry + full reel-3 in FS).
+        # Current marked_prob locked for this path. Reels tuned aggressively.
+        # New targets: Base hit ~55-60%, overall RTP 96.73%, adjust base/FS RTP split and volatility as needed.
         #
         # base: applied to reels 2-4 on initial landing and after each tumble (drops).
-        # fs:   higher base chance, but drop kept very low.
-        # force_reel3_marked() uses count=1 (restored after temp test with 0).
+        # fs:   higher chance on 2/4; reel 3 fully Marked at every FS spin start.
         self.marked_prob = {
-            "base": {"initial": 0.06, "drop": 0.015},     # Base unchanged for now
-            "fs":   {"initial": 0.01, "drop": 0.00005}    # Further lowered for uncapped stability test
+            "base": {"initial": 0.15, "drop": 0.045},
+            "fs":   {"initial": 0.13, "drop": 0.035}
         }
 
-        self.fs_reel3_marked_count = 1  # Restored to design value after temporary testing with 0 (for shorter rounds)
+        self.fs_reel3_marked_count = 4  # Full vertical Marked stack on reel 3 every FS spin (MDD v0.7 spec)
 
         self.freespin_triggers = {
             self.basegame_type: {3: 12, 4: 14, 5: 16, 6: 18, 7: 20, 8: 22, 9: 24, 10: 26},
-            self.freegame_type: {3: 12, 4: 14, 5: 16, 6: 18, 7: 20, 8: 22, 9: 24, 10: 26}
+            self.freegame_type: {3: 8, 4: 10, 5: 12, 6: 14, 7: 16, 8: 18, 9: 20, 10: 22}
         }
         # Extend for high scatter counts (possible in long cascades / many S landing, since S usually don't get removed).
         # Use +2 per additional scatter. Prevents KeyError on retrigger with 11+ scatters.
@@ -75,12 +76,13 @@ class GameConfig(Config):
         # ----------------------------------------------------------------
         # Updated 2026-06-30 as first step for realistic testing.
         # - Length: 300 stops/reel (up from 150-stub)
-        # - S frequency tuned: BR ~2.5% (natural ~1/80 FS rate), FR ~5% (retrigger friendly)
+        # - S frequency tuned: BR ~2.5-3% , FR ~4.5% (natural low FS rate, controlled retriggers)
         # - Varied per reel (not clones). Good L/H density for marked_prob to matter.
         # - FRWCAP.csv exists in reels/ but is NOT integrated here yet (has H5 + needs review).
         #   When ready: add "FRWCAP": "FRWCAP.csv" + use in wincap/free dists like 0_0_ways example.
         # These are explicitly **for testing** (not production final reels).
         # Production reels will come from optimization after full cascade+marked+mult impl.
+        # Per Option B: base hit rate accepted ~55-60%; reels tuned for distribution/volatility rather than forcing low hit.
         # Generator: reels/generate_improved_reels.py (re-runnable, seeded)
         # See also README.md in this folder for full reel summary + symbol counts.
         reels = {"BR0": "BR0.csv", "FR0": "FR0.csv"}

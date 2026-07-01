@@ -29,43 +29,62 @@ SYMBOLS = ["H1", "H2", "H3", "H4", "L1", "L2", "L3", "L4", "L5", "W", "S"]
 
 def make_counts_balanced(reel_idx: int, is_base: bool) -> dict:
     """Return exact counts summing to LENGTH for the reel.
-    Target: natural FS hit rate of ~5-8% (P(>=3S) on 20 positions).
-    Base: ~3.9% S avg.
-    FS: ~6.3% S (for some natural retriggers).
-    Slight per-reel variation. L/H plenty for marked promotion.
+    Aggressive Phase 2 reel tuning (real distributions validation):
+    - Clear reductions to Low symbols (esp L4/L5) on reels 2-3-4 to cut easy 3-symbol Low hits.
+    - Noticeable Low -> High rebalance on middle reels.
+    - S kept at reduced levels.
+    Reels only - marked_prob and fs_reel3_marked_count untouched.
     """
     if is_base:
-        # Base: ~3.9% S => ~5-7% natural FS rate (before cascades/marked)
-        # ~7-8% W, H total ~24-26%, L fill rest.
-        base_s = [12, 13, 12, 13, 13][reel_idx]  # ~4.2% for ~5.5-7% P(>=3S)
+        # Base: aggressive Phase 2 reel tuning to drive base hit rate toward 28-28.5%
+        # - S reduced
+        # - Reels 2-3-4: previous Low->High + now targeted +Low/W for better small/medium win frequency in base
+        #   (address bimodal: more consistent small/medium base wins vs 0x or FS big)
+        base_s = [8, 9, 8, 9, 8][reel_idx]
         base_w = [22, 21, 23, 20, 22][reel_idx]
-        base_h1 = [12, 11, 12, 11, 11][reel_idx]
-        base_h2 = [15, 16, 15, 16, 15][reel_idx]
-        base_h3 = [19, 18, 19, 18, 19][reel_idx]
-        base_h4 = [23, 22, 23, 22, 23][reel_idx]
-        base_l1 = [32, 33, 32, 33, 32][reel_idx]
-        base_l2 = [37, 36, 37, 36, 37][reel_idx]
-        base_l3 = [40, 41, 40, 41, 40][reel_idx]
-        base_l4 = [44, 45, 44, 45, 44][reel_idx]
-        base_l5 = [49, 48, 49, 48, 48][reel_idx]
+        base_h1 = [13, 12, 13, 12, 12][reel_idx]
+        base_h2 = [17, 18, 17, 18, 17][reel_idx]
+        base_h3 = [22, 21, 22, 21, 21][reel_idx]
+        base_h4 = [28, 27, 28, 27, 28][reel_idx]
+        base_l1 = [30, 31, 30, 31, 30][reel_idx]
+        base_l2 = [34, 33, 34, 33, 34][reel_idx]
+        base_l3 = [36, 37, 36, 37, 36][reel_idx]
+        base_l4 = [38, 39, 38, 39, 38][reel_idx]
+        base_l5 = [42, 41, 42, 41, 42][reel_idx]
+        if reel_idx in (1, 2, 3):
+            # Targeted tweak for Option A: boost Low + W on middle reels for more frequent small/medium base wins
+            # (more 3L/4L small hits + wild-assisted wins), while keeping overall hit rate high but improving quality
+            base_l5 += 6
+            base_l4 += 4
+            base_l2 += 3
+            base_w += 3
+            base_h4 -= 8
+            base_h3 -= 8
         counts = {
             "S": base_s, "W": base_w,
             "H1": base_h1, "H2": base_h2, "H3": base_h3, "H4": base_h4,
             "L1": base_l1, "L2": base_l2, "L3": base_l3, "L4": base_l4, "L5": base_l5,
         }
     else:
-        # Free Spins: ~6.3% S for some natural retriggers
-        fs_s = [18, 19, 20, 19, 18][reel_idx]
+        # Free Spins: keep S at current reduced level (slightly lower than previous)
+        # Apply similar noticeable Low -> High rebalance on reels 2-3-4 for consistency
+        fs_s = [13, 14, 13, 14, 13][reel_idx]
         fs_w = [26, 27, 25, 28, 27][reel_idx]
-        fs_h1 = [14, 13, 14, 13, 14][reel_idx]
-        fs_h2 = [19, 18, 19, 18, 19][reel_idx]
-        fs_h3 = [22, 23, 22, 23, 22][reel_idx]
-        fs_h4 = [26, 25, 26, 25, 26][reel_idx]
-        fs_l1 = [28, 29, 28, 29, 28][reel_idx]
-        fs_l2 = [32, 31, 32, 31, 32][reel_idx]
-        fs_l3 = [34, 35, 34, 35, 34][reel_idx]
-        fs_l4 = [37, 38, 37, 38, 37][reel_idx]
-        fs_l5 = [45, 44, 45, 44, 45][reel_idx]
+        fs_h1 = [15, 14, 15, 14, 15][reel_idx]
+        fs_h2 = [21, 20, 21, 20, 21][reel_idx]
+        fs_h3 = [25, 26, 25, 26, 25][reel_idx]
+        fs_h4 = [30, 29, 30, 29, 30][reel_idx]
+        fs_l1 = [26, 27, 26, 27, 26][reel_idx]
+        fs_l2 = [30, 29, 30, 29, 30][reel_idx]
+        fs_l3 = [32, 33, 32, 33, 32][reel_idx]
+        fs_l4 = [33, 34, 33, 34, 33][reel_idx]
+        fs_l5 = [40, 39, 40, 39, 40][reel_idx]
+        if reel_idx in (1, 2, 3):
+            # Larger visible shift on middle reels
+            fs_l5 -= 5
+            fs_l4 -= 4
+            fs_h4 += 5
+            fs_h3 += 4
         counts = {
             "S": fs_s, "W": fs_w,
             "H1": fs_h1, "H2": fs_h2, "H3": fs_h3, "H4": fs_h4,

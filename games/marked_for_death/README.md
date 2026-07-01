@@ -15,8 +15,8 @@
   - FR0: ~4.7–5.3% (was 8.7%) → allows retriggers without being spammy
 - Varied symbol weights per reel (previously every reel was an identical copy)
 - Proportioned H1–H4 / L1–L5 / W / S to support:
-  - Target overall hit rate ~28–29%
-  - Marked promotion (L/H symbols abundant on reels 2/3/4) to feel impactful at the configured `marked_prob` rates
+  - Accepted base hit rate ~55-60% (Option B: rebalance RTP/volatility targets rather than force ~28%)
+  - Marked promotion (L/H symbols abundant on reels 2/3-4) to feel impactful at the configured `marked_prob` rates
 - Deterministic generation via `reels/generate_improved_reels.py` (seed-based, reproducible)
 - **These are testing reels, not final production.** They will be further balanced using the optimization program + analyzer once cascades, marked promotion, persistent multiplier, and forced reel-3 mechanics are complete.
 

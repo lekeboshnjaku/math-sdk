@@ -99,43 +99,26 @@ if __name__ == "__main__":
     # Also watch [DEBUG] output from gamestate.py when DEBUG=True.
 
     num_sim_args = {
-        "base": 80,  # small sample ~50-100 spins for uncapped probe (fs_safety_cap=False)
+        "base": 100000,  # Final 100k-spin Option B baseline validation with real distributions
     }
 
     # === Core Temporary Validation Flags ===
-    # (See the big "Development / Validation Mode Flags" block near the top for full explanation,
-    #  "how to switch", and priority rules.)
-
-    # use_validation_distributions:
-    #   When True (and fs_test_mode=False), replaces the betmode distributions with a single
-    #   safe "basegame" distribution (quota=1). Prevents wincap/force_freegame criteria.
-    #   Keep True during early Priority 1 work. Set False only after forcing logic is solid.
-    use_validation_distributions = False  # real betmode distributions
-
-    # fs_test_mode:
-    #   When True, takes priority and completely overrides distributions to force many FS entries.
-    #   Used to exercise x2 start, carry, force_reel3_marked, retriggers, etc.
-    #   Disables wincap paths. Turn OFF for realistic testing.
-    fs_test_mode = False  # real distributions (no forcing)
-
-    # fs_safety_cap:
-    #   Runtime guard (passed to gamestate). Caps FS length and multiplier to avoid runaways
-    #   during early testing with aggressive marked_prob values.
-    #   See gamestate.py for the actual guards (MAX_FS_SPINS, MAX_MULT, safety_cap_enabled).
-    #   Set to False once probabilities are tuned.
-    fs_safety_cap = False  # OFF for this uncapped probe to see full natural behavior
+    # Clean 100k real-dist validation (use_validation_distributions=False, fs_safety_cap=True)
+    use_validation_distributions = False
+    fs_test_mode = False
+    fs_safety_cap = True
 
     # The three flags above + the distribution override logic below are the main temporary
     # development aids. Everything below this point (until the run_conditions) is either
     # constant infrastructure or the conditional distribution replacement code.
 
-    num_threads = 4  # 1 thread for clean sequential logs in this probe
+    num_threads = 8  # 8 threads for your 8 vCPU machine (parallelize the long FS rounds)
 
     run_conditions = {
-        "run_sims": True,   # set True to generate books for inspection (small runs)
+        "run_sims": True,
         "run_optimization": False,
-        "run_analysis": False,
-        "upload_data": False,  # recommended False for local validation only
+        "run_analysis": True,  # Attempt stat sheet + books for Option B baseline summary
+        "upload_data": False,
     }
     target_modes = ["base"]
 
@@ -146,7 +129,7 @@ if __name__ == "__main__":
     # Patch for uncapped test (ensure freegame reel_weights for natural FS start from real dists, prevent KeyError)
     for bm in config.bet_modes:
         for dist in (getattr(bm, '_distributions', None) or []):
-            cond = getattr(dist, 'conditions', None)
+            cond = getattr(dist, '_conditions', None) or getattr(dist, 'conditions', None)
             if cond and 'reel_weights' in cond:
                 rw = cond['reel_weights']
                 if config.freegame_type not in rw:
@@ -169,10 +152,28 @@ if __name__ == "__main__":
     for bm in config.bet_modes:
         if bm.get_name() == 'base':
             for d in bm.get_distributions():
-                cond = getattr(d, 'conditions', None)
+                cond = getattr(d, '_conditions', None) or getattr(d, 'conditions', None)
                 if cond:
                     cond['force_wincap'] = False
                     cond['force_freegame'] = False
+
+    # Remove wincap distribution entirely for this test.
+    # Even with quota=0, get_sim_splits does max(..., 1) so it allocates 1 sim
+    # that then loops forever on win_criteria=wincap (especially bad with no safety cap).
+    for bm in config.bet_modes:
+        if bm.get_name() == 'base':
+            bm._distributions = [d for d in bm.get_distributions() if getattr(d, 'get_criteria', lambda: None)() != 'wincap']
+
+    # Neutralize win_criteria for the "0" distribution as well.
+    # Otherwise, sims assigned "0" criteria will infinite-repeat (same seed => same outcome)
+    # if their natural final_win != 0. This is the root cause of hangs when
+    # use_validation_distributions=False with real betmodes (which include "0" quota 0.4).
+    # Similar issue as wincap; validation mode avoids it by using unconstrained dist only.
+    for bm in config.bet_modes:
+        if bm.get_name() == 'base':
+            for d in bm.get_distributions():
+                if getattr(d, 'get_criteria', lambda: None)() == '0':
+                    d._win_criteria = None
 
     # === Distribution Override Logic (TEMPORARY) ===
     # See the "Development / Validation Mode Flags" block near the top for the full priority
@@ -251,7 +252,7 @@ if __name__ == "__main__":
         # Real betmode distributions from game_config.py are used (no temporary overrides applied).
         pass
 
-    if run_conditions["run_optimization"] or run_conditions["run_analysis"]:
+    if run_conditions["run_optimization"]:
         optimization_setup_class = OptimizationSetup(config)
 
     if run_conditions["run_sims"]:
